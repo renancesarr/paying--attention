@@ -1,7 +1,7 @@
 use paying_attention_core::{
-    AttentionWorkflow, CompletionStatus, ContinuationStatus, DeclaredTask, EmptyDeclaredTask,
-    Event, InvalidTransition, NaggingOrigin, ReviewRecord, ReviewSubmission, TaskRelevance,
-    WorkflowView,
+    AttentionWorkflow, CompletionStatus, ContinuationStatus, DeclaredTask, DriftCategory,
+    DriftRecoveryAction, DriftRecoveryRecord, DriftRecoverySubmission, EmptyDeclaredTask, Event,
+    InvalidTransition, NaggingOrigin, ReviewRecord, ReviewSubmission, TaskRelevance, WorkflowView,
 };
 
 #[test]
@@ -12,8 +12,18 @@ fn boot_delay_opens_check_in_through_the_attention_workflow() {
         .dispatch(Event::BootDelayElapsed)
         .expect("boot delay is valid");
 
-    assert_eq!(view, WorkflowView::CheckIn);
-    assert_eq!(workflow.view(), WorkflowView::CheckIn);
+    assert_eq!(
+        view,
+        WorkflowView::CheckIn {
+            last_drift_recovery: None,
+        }
+    );
+    assert_eq!(
+        workflow.view(),
+        WorkflowView::CheckIn {
+            last_drift_recovery: None,
+        }
+    );
 }
 
 #[test]
@@ -34,6 +44,7 @@ fn check_in_starts_a_focus_cycle_with_the_declared_task() {
         view,
         WorkflowView::Focus {
             declared_task,
+            last_drift_recovery: None,
             last_review: None,
         }
     );
@@ -98,6 +109,7 @@ fn review_with_a_new_declared_task_starts_the_next_focus_cycle() {
         view,
         WorkflowView::Focus {
             declared_task: next_task,
+            last_drift_recovery: None,
             last_review: Some(ReviewRecord {
                 reviewed_task: previous_task,
                 submission,
@@ -193,6 +205,7 @@ fn review_accepts_an_in_progress_task_with_completion_justification() {
         view,
         WorkflowView::Focus {
             declared_task: next_task,
+            last_drift_recovery: None,
             last_review: Some(ReviewRecord {
                 reviewed_task: DeclaredTask::new("Implement the core FSM").expect("a valid task"),
                 submission: ReviewSubmission {
@@ -233,6 +246,7 @@ fn review_accepts_an_unfinished_task_with_completion_justification() {
         view,
         WorkflowView::Focus {
             declared_task: next_task.clone(),
+            last_drift_recovery: None,
             last_review: Some(ReviewRecord {
                 reviewed_task: DeclaredTask::new("Implement the core FSM").expect("a valid task"),
                 submission: ReviewSubmission {
@@ -292,6 +306,7 @@ fn review_can_continue_the_original_declared_task() {
         view,
         WorkflowView::Focus {
             declared_task: declared_task.clone(),
+            last_drift_recovery: None,
             last_review: Some(ReviewRecord {
                 reviewed_task: declared_task.clone(),
                 submission: completed_relevant_submission(declared_task),
@@ -525,6 +540,173 @@ fn idle_focus_cycle_enters_nagging_then_opens_drift_recovery_on_input() {
 }
 
 #[test]
+fn drift_recovery_with_a_new_task_starts_a_conscious_focus_cycle() {
+    let drifted_task = DeclaredTask::new("Implement the core FSM").expect("a valid task");
+    let mut workflow = workflow_in_focus(drifted_task.clone());
+    workflow
+        .dispatch(Event::IdleThresholdElapsed)
+        .expect("idle Focus Cycle enters Nagging Mode");
+    workflow
+        .dispatch(Event::InputDetected)
+        .expect("input after focus Nagging opens Drift Recovery");
+    let next_task = DeclaredTask::new("Write the Drift Recovery rules").expect("a valid task");
+
+    let submission = DriftRecoverySubmission {
+        note: "I followed unrelated documentation links.".into(),
+        category: DriftCategory::LinkHopping,
+        action: DriftRecoveryAction::NewTask(next_task.clone()),
+    };
+
+    let view = workflow
+        .dispatch(Event::DriftRecoverySubmitted {
+            submission: submission.clone(),
+        })
+        .expect("a Drift Recovery submission with a new task is valid");
+
+    assert_eq!(
+        view,
+        WorkflowView::Focus {
+            declared_task: next_task,
+            last_review: None,
+            last_drift_recovery: Some(DriftRecoveryRecord {
+                drifted_task,
+                submission,
+            }),
+        }
+    );
+}
+
+#[test]
+fn drift_recovery_rejects_a_blank_note_without_leaving_the_recovery_form() {
+    let declared_task = DeclaredTask::new("Implement the core FSM").expect("a valid task");
+    let mut workflow = workflow_in_focus(declared_task.clone());
+    workflow
+        .dispatch(Event::IdleThresholdElapsed)
+        .expect("idle Focus Cycle enters Nagging Mode");
+    workflow
+        .dispatch(Event::InputDetected)
+        .expect("input after focus Nagging opens Drift Recovery");
+
+    let error = workflow
+        .dispatch(Event::DriftRecoverySubmitted {
+            submission: DriftRecoverySubmission {
+                note: "   ".into(),
+                category: DriftCategory::Other,
+                action: DriftRecoveryAction::NewTask(
+                    DeclaredTask::new("Write the Drift Recovery rules").expect("a valid task"),
+                ),
+            },
+        })
+        .expect_err("a blank recovery note must be rejected");
+
+    assert_eq!(error.state, WorkflowView::DriftRecovery { declared_task });
+    assert_eq!(workflow.view(), error.state);
+}
+
+#[test]
+fn drift_recovery_can_retake_the_drifted_task() {
+    let declared_task = DeclaredTask::new("Implement the core FSM").expect("a valid task");
+    let mut workflow = workflow_in_focus(declared_task.clone());
+    workflow
+        .dispatch(Event::IdleThresholdElapsed)
+        .expect("idle Focus Cycle enters Nagging Mode");
+    workflow
+        .dispatch(Event::InputDetected)
+        .expect("input after focus Nagging opens Drift Recovery");
+    let submission = DriftRecoverySubmission {
+        note: "I was distracted by an unrelated conversation.".into(),
+        category: DriftCategory::OfflineDistraction,
+        action: DriftRecoveryAction::Retake,
+    };
+
+    let view = workflow
+        .dispatch(Event::DriftRecoverySubmitted {
+            submission: submission.clone(),
+        })
+        .expect("retaking the declared task is valid");
+
+    assert_eq!(
+        view,
+        WorkflowView::Focus {
+            declared_task: declared_task.clone(),
+            last_drift_recovery: Some(DriftRecoveryRecord {
+                drifted_task: declared_task,
+                submission,
+            }),
+            last_review: None,
+        }
+    );
+}
+
+#[test]
+fn drift_recovery_can_mark_the_drifted_task_incomplete_before_a_new_check_in() {
+    let declared_task = DeclaredTask::new("Implement the core FSM").expect("a valid task");
+    let mut workflow = workflow_in_focus(declared_task.clone());
+    workflow
+        .dispatch(Event::IdleThresholdElapsed)
+        .expect("idle Focus Cycle enters Nagging Mode");
+    workflow
+        .dispatch(Event::InputDetected)
+        .expect("input after focus Nagging opens Drift Recovery");
+    let submission = DriftRecoverySubmission {
+        note: "I need to return to this with a smaller task.".into(),
+        category: DriftCategory::Other,
+        action: DriftRecoveryAction::MarkIncomplete,
+    };
+
+    let view = workflow
+        .dispatch(Event::DriftRecoverySubmitted {
+            submission: submission.clone(),
+        })
+        .expect("marking a drifted task incomplete is valid");
+
+    assert_eq!(
+        view,
+        WorkflowView::CheckIn {
+            last_drift_recovery: Some(DriftRecoveryRecord {
+                drifted_task: declared_task,
+                submission,
+            }),
+        }
+    );
+}
+
+#[test]
+fn drift_recovery_can_restart_the_drifted_task() {
+    let declared_task = DeclaredTask::new("Implement the core FSM").expect("a valid task");
+    let mut workflow = workflow_in_focus(declared_task.clone());
+    workflow
+        .dispatch(Event::IdleThresholdElapsed)
+        .expect("idle Focus Cycle enters Nagging Mode");
+    workflow
+        .dispatch(Event::InputDetected)
+        .expect("input after focus Nagging opens Drift Recovery");
+    let submission = DriftRecoverySubmission {
+        note: "I want a clean Focus Cycle for this task.".into(),
+        category: DriftCategory::Other,
+        action: DriftRecoveryAction::Restart,
+    };
+
+    let view = workflow
+        .dispatch(Event::DriftRecoverySubmitted {
+            submission: submission.clone(),
+        })
+        .expect("restarting the drifted task is valid");
+
+    assert_eq!(
+        view,
+        WorkflowView::Focus {
+            declared_task: declared_task.clone(),
+            last_drift_recovery: Some(DriftRecoveryRecord {
+                drifted_task: declared_task,
+                submission,
+            }),
+            last_review: None,
+        }
+    );
+}
+
+#[test]
 fn idle_check_in_returns_to_check_in_when_input_is_detected() {
     let mut workflow = AttentionWorkflow::boot();
     workflow
@@ -546,7 +728,12 @@ fn idle_check_in_returns_to_check_in_when_input_is_detected() {
         .dispatch(Event::InputDetected)
         .expect("input after Check-in Nagging returns to Check-in");
 
-    assert_eq!(check_in_view, WorkflowView::CheckIn);
+    assert_eq!(
+        check_in_view,
+        WorkflowView::CheckIn {
+            last_drift_recovery: None,
+        }
+    );
 }
 
 #[test]
@@ -631,7 +818,9 @@ fn invalid_events_preserve_each_extended_attention_workflow_view() {
     assert_invalid_transition(
         &mut check_in_workflow,
         Event::FocusElapsed,
-        WorkflowView::CheckIn,
+        WorkflowView::CheckIn {
+            last_drift_recovery: None,
+        },
     );
 
     let mut focus_workflow = workflow_in_focus(declared_task.clone());
@@ -640,6 +829,7 @@ fn invalid_events_preserve_each_extended_attention_workflow_view() {
         Event::BootDelayElapsed,
         WorkflowView::Focus {
             declared_task: declared_task.clone(),
+            last_drift_recovery: None,
             last_review: None,
         },
     );
