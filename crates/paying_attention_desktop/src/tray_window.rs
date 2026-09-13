@@ -3,9 +3,11 @@ use std::{cell::RefCell, rc::Rc};
 
 use libadwaita::{self as adw, gtk, prelude::*};
 use paying_attention_core::AttentionWorkflow;
+use paying_attention_storage::SqliteAttentionStore;
 
 use crate::{
-    settings_screen,
+    attention_history::HistoryView,
+    attention_history_screen, settings_screen,
     settings_store::SettingsStore,
     strings,
     tray_command::{MeetingModeInput, TrayCommand},
@@ -18,12 +20,33 @@ pub fn show(
 ) {
     match command {
         TrayCommand::OpenSettings => present_settings(application),
-        TrayCommand::OpenAttentionHistory => {
-            present_message(application, strings::OPEN_ATTENTION_HISTORY)
-        }
+        TrayCommand::OpenAttentionHistory => present_attention_history(application),
         TrayCommand::OpenMeetingMode => present_meeting_form(application, workflow),
         TrayCommand::StartMeeting(_) => {}
     }
+}
+
+fn present_attention_history(application: &adw::Application) {
+    let path = data_path();
+    if let Some(parent) = path.parent() {
+        let _ = std::fs::create_dir_all(parent);
+    }
+    let history = SqliteAttentionStore::open(path)
+        .map(|store| {
+            HistoryView::from_records(
+                store.focus_cycles().unwrap_or_default(),
+                store.history().unwrap_or_default(),
+            )
+        })
+        .unwrap_or(HistoryView { items: Vec::new() });
+    let window = adw::ApplicationWindow::builder()
+        .application(application)
+        .title(strings::ATTENTION_HISTORY)
+        .default_width(560)
+        .default_height(420)
+        .build();
+    window.set_content(Some(&attention_history_screen::build(history)));
+    window.present();
 }
 
 fn present_settings(application: &adw::Application) {
@@ -52,15 +75,12 @@ fn settings_path() -> PathBuf {
         .join("paying-attention/config.toml")
 }
 
-fn present_message(application: &adw::Application, title: &str) {
-    let window = adw::ApplicationWindow::builder()
-        .application(application)
-        .title(title)
-        .default_width(420)
-        .default_height(180)
-        .build();
-    window.set_content(Some(&gtk::Label::new(Some(title))));
-    window.present();
+fn data_path() -> PathBuf {
+    std::env::var_os("XDG_DATA_HOME")
+        .map(PathBuf::from)
+        .or_else(|| std::env::var_os("HOME").map(|home| PathBuf::from(home).join(".local/share")))
+        .unwrap_or_else(|| PathBuf::from(".local/share"))
+        .join("paying-attention/history.sqlite")
 }
 
 fn present_meeting_form(application: &adw::Application, workflow: Rc<RefCell<AttentionWorkflow>>) {

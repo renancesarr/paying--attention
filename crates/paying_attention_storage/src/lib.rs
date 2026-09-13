@@ -13,6 +13,8 @@ pub enum AttentionHistoryEvent {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FocusCycleRecord {
     pub declared_task: String,
+    pub started_at: String,
+    pub ended_at: String,
     pub relevance: Option<String>,
     pub completion: Option<String>,
     pub completion_justification: Option<String>,
@@ -50,12 +52,16 @@ impl SqliteAttentionStore {
             CREATE TABLE IF NOT EXISTS focus_cycles (
                 id INTEGER PRIMARY KEY,
                 declared_task TEXT NOT NULL,
+                started_at TEXT NOT NULL,
+                ended_at TEXT NOT NULL,
                 relevance TEXT,
                 completion TEXT,
                 completion_justification TEXT
             );
             ",
         )?;
+        let _ = connection.execute("ALTER TABLE focus_cycles ADD COLUMN started_at TEXT", []);
+        let _ = connection.execute("ALTER TABLE focus_cycles ADD COLUMN ended_at TEXT", []);
 
         Ok(Self { connection })
     }
@@ -127,23 +133,25 @@ impl SqliteAttentionStore {
 
     pub fn record_focus_cycle(&mut self, record: FocusCycleRecord) -> rusqlite::Result<()> {
         self.connection.execute(
-            "INSERT INTO focus_cycles (declared_task, relevance, completion, completion_justification) VALUES (?1, ?2, ?3, ?4)",
-            params![record.declared_task, record.relevance, record.completion, record.completion_justification],
+            "INSERT INTO focus_cycles (declared_task, started_at, ended_at, relevance, completion, completion_justification) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+            params![record.declared_task, record.started_at, record.ended_at, record.relevance, record.completion, record.completion_justification],
         )?;
         Ok(())
     }
 
     pub fn focus_cycles(&self) -> rusqlite::Result<Vec<FocusCycleRecord>> {
         let mut statement = self.connection.prepare(
-            "SELECT declared_task, relevance, completion, completion_justification FROM focus_cycles ORDER BY id",
+            "SELECT declared_task, COALESCE(started_at, ''), COALESCE(ended_at, ''), relevance, completion, completion_justification FROM focus_cycles ORDER BY id",
         )?;
         let records = statement
             .query_map([], |row| {
                 Ok(FocusCycleRecord {
                     declared_task: row.get(0)?,
-                    relevance: row.get(1)?,
-                    completion: row.get(2)?,
-                    completion_justification: row.get(3)?,
+                    started_at: row.get(1)?,
+                    ended_at: row.get(2)?,
+                    relevance: row.get(3)?,
+                    completion: row.get(4)?,
+                    completion_justification: row.get(5)?,
                 })
             })?
             .collect::<rusqlite::Result<Vec<_>>>()?;
