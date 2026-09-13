@@ -780,6 +780,7 @@ version = "0.1.0"
 dependencies = [
  "ksni",
  "libadwaita",
+ "paying_attention_config",
  "paying_attention_core",
 ]
 

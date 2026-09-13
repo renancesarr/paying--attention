@@ -1,9 +1,12 @@
+use std::path::PathBuf;
 use std::{cell::RefCell, rc::Rc};
 
 use libadwaita::{self as adw, gtk, prelude::*};
 use paying_attention_core::AttentionWorkflow;
 
 use crate::{
+    settings_screen,
+    settings_store::SettingsStore,
     strings,
     tray_command::{MeetingModeInput, TrayCommand},
 };
@@ -14,13 +17,39 @@ pub fn show(
     command: TrayCommand,
 ) {
     match command {
-        TrayCommand::OpenSettings => present_message(application, strings::OPEN_SETTINGS),
+        TrayCommand::OpenSettings => present_settings(application),
         TrayCommand::OpenAttentionHistory => {
             present_message(application, strings::OPEN_ATTENTION_HISTORY)
         }
         TrayCommand::OpenMeetingMode => present_meeting_form(application, workflow),
         TrayCommand::StartMeeting(_) => {}
     }
+}
+
+fn present_settings(application: &adw::Application) {
+    let path = settings_path();
+    let store = SettingsStore::new(&path);
+    let config = store.load().unwrap_or_default();
+    let window = adw::ApplicationWindow::builder()
+        .application(application)
+        .title(strings::OPEN_SETTINGS)
+        .default_width(480)
+        .default_height(500)
+        .build();
+    let window_for_save = window.clone();
+    window.set_content(Some(&settings_screen::build(config, move |config| {
+        let _ = SettingsStore::new(&path).save(&config);
+        window_for_save.close();
+    })));
+    window.present();
+}
+
+fn settings_path() -> PathBuf {
+    std::env::var_os("XDG_CONFIG_HOME")
+        .map(PathBuf::from)
+        .or_else(|| std::env::var_os("HOME").map(|home| PathBuf::from(home).join(".config")))
+        .unwrap_or_else(|| PathBuf::from(".config"))
+        .join("paying-attention/config.toml")
 }
 
 fn present_message(application: &adw::Application, title: &str) {
