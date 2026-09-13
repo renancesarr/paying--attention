@@ -1,5 +1,8 @@
 //! Technical recovery operations shared by the command line and desktop shell.
 
+pub mod manual_validation_command;
+pub mod manual_validation_report;
+
 use paying_attention_storage::SqliteAttentionStore;
 
 pub struct TechnicalRecoveryService<'store> {

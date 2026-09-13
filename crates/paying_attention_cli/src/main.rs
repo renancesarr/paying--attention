@@ -1,7 +1,9 @@
 use std::{env, process};
 
-use paying_attention_cli::TechnicalRecoveryService;
-use paying_attention_storage::{application_database_path, SqliteAttentionStore};
+use paying_attention_cli::{manual_validation_command, TechnicalRecoveryService};
+use paying_attention_storage::{
+    application_database_path, manual_validation_database_path, SqliteAttentionStore,
+};
 
 fn main() {
     if let Err(message) = run(env::args().skip(1).collect()) {
@@ -11,6 +13,17 @@ fn main() {
 }
 
 fn run(arguments: Vec<String>) -> Result<(), String> {
+    if let [command, remaining @ ..] = arguments.as_slice() {
+        if command == "validation" {
+            let database = manual_validation_database_path().map_err(|error| error.to_string())?;
+            println!(
+                "{}",
+                manual_validation_command::execute(remaining, &database)?
+            );
+            return Ok(());
+        }
+    }
+
     let path = application_database_path().map_err(|error| error.to_string())?;
     let mut store = SqliteAttentionStore::open(path).map_err(|error| error.to_string())?;
     let mut service = TechnicalRecoveryService::new(&mut store);
@@ -25,6 +38,6 @@ fn run(arguments: Vec<String>) -> Result<(), String> {
             println!("unlocked");
             Ok(())
         }
-        _ => Err("Use `paying-attention status` or `paying-attention unlock --force`.".into()),
+        _ => Err("Use `paying-attention status`, `paying-attention unlock --force`, or `paying-attention validation`.".into()),
     }
 }
