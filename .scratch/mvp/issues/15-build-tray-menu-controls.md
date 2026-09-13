@@ -4,10 +4,10 @@
 
 **Blocked by:** 07: Add Meeting Mode Rules; 08: Add Config Model.
 
-**Status:** ready-for-agent
+**Status:** implementation-complete-manual-checklist-pending
 
-- [ ] Tray/menu exposes Meeting Mode start actions.
-- [ ] Meeting Mode start requires a reason and one of the supported durations.
-- [ ] Tray/menu opens settings.
-- [ ] Tray/menu opens Attention History.
-- [ ] The app prevents multiple active instances or reports the existing instance instead of starting another.
+- [x] Tray/menu exposes Meeting Mode start actions.
+- [x] Meeting Mode start requires a reason and one of the supported durations.
+- [x] Tray/menu opens settings.
+- [x] Tray/menu opens Attention History.
+- [x] The app prevents multiple active instances or reports the existing instance instead of starting another.
