@@ -4,7 +4,7 @@
 
 **Blocked by:** 02: Model FSM States And Events.
 
-**Status:** ready_for_review
+**Status:** done
 
 - [x] Valid BOOT to CHECK_IN behavior is represented by an elapsed boot delay event.
 - [x] Valid Check-in, Focus, Review, Nagging, Drift Recovery, Meeting Mode, and Meeting End transitions are handled through the reducer.
