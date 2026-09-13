@@ -4,13 +4,14 @@
 
 **Blocked by:** 01: Scaffold Rust Workspace And Core Crate.
 
-**Status:** ready-for-agent
+**Status:** completed-accepted-behavioral-mvp
 
-- [ ] A minimal GTK4/libadwaita window can open fullscreen without decorations.
-- [ ] The spike records whether the window receives focus reliably.
-- [ ] The spike records what happens when the user attempts alt-tab, super-tab, workspace switching, or interacting with other apps.
-- [ ] The spike documents the environment: distro, GNOME version, session type, monitor setup, and keyboard shortcuts tested.
-- [ ] The spike produces evidence: a short Markdown result, screenshots or video, and a completed manual checklist.
-- [ ] The spike has a development-only safe exit using `Ctrl+Shift+F`.
-- [ ] The spike declares GTK too weak for the final product if it cannot open fullscreen, loses focus immediately, makes alt-tab/super-tab trivial, or cannot receive input reliably.
-- [ ] The spike documents limitations honestly and identifies whether future GNOME Shell extension work is needed.
+- [x] Every connected monitor receives a fullscreen, undecorated spike window.
+- [x] A minimal GTK4/libadwaita window can open fullscreen without decorations.
+- [x] The spike records whether the window receives focus reliably.
+- [x] The spike records that Alt+Tab and Super+Tab can bypass the Attention Block; workspace switching and other-app interaction remain pending.
+- [x] The spike documents the environment: distro, GNOME version, session type, monitor setup, and keyboard shortcuts tested.
+- [x] The spike produces evidence: a short Markdown result and completed SQLite-backed manual checklist. The user explicitly accepted closure without a screenshot or video because the target host lacks `gnome-screenshot`.
+- [x] The spike has a development-only safe exit using `Ctrl+Shift+F`.
+- [x] The spike declares GTK too weak for a hard lock because Alt+Tab and Super+Tab make bypass trivial.
+- [x] The evidence documents this limitation and retains stronger GNOME Shell integration as future work.

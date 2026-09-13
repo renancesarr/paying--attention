@@ -1,0 +1,17 @@
+[package]
+name = "paying_attention_desktop"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[[bin]]
+name = "paying-attention-desktop"
+path = "src/main.rs"
+
+[dependencies]
+ksni = { version = "0.3", features = ["blocking"] }
+libadwaita = "0.8"
+paying_attention_core = { path = "../paying_attention_core" }
+paying_attention_config = { path = "../paying_attention_config" }
+paying_attention_storage = { path = "../paying_attention_storage" }

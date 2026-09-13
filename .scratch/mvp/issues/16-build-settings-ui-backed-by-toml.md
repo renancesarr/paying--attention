@@ -1,13 +1,13 @@
-# 16: Build Settings UI Backed By TOML
+# 16: Build Settings UI Backed By SQLite
 
-**What to build:** Build a settings UI for common configuration while preserving TOML as the advanced configuration source.
+**What to build:** Build a settings UI for common configuration stored in the shared SQLite application database.
 
 **Blocked by:** 08: Add Config Model; 15: Build Tray Menu Controls.
 
-**Status:** ready-for-agent
+**Status:** implementation-complete-manual-checklist-pending
 
-- [ ] Settings UI can display and update common timer values.
-- [ ] Settings UI can display and update Nagging sound path and visual behavior.
-- [ ] Settings UI can display and update Telegram credential fields according to the MVP plaintext decision.
-- [ ] Settings UI can display Meeting Mode defaults.
-- [ ] Settings changes are saved to TOML and reloaded consistently.
+- [x] Settings UI can display and update common timer values.
+- [x] Settings UI can display and update Nagging sound path and visual behavior.
+- [x] Settings UI can display and update Telegram credential fields according to the MVP plaintext decision.
+- [x] Settings UI can display Meeting Mode defaults.
+- [x] Settings changes are saved to SQLite and reloaded consistently.

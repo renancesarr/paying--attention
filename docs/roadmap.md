@@ -57,8 +57,7 @@ Goal: make the app survive normal personal use.
 
 Add:
 
-- TOML config.
-- SQLite Attention History and restorable state.
+- SQLite database for configuration, Attention History, restorable state, and technical logs.
 - Tray/menu.
 - Settings UI.
 - CLI status/debug.

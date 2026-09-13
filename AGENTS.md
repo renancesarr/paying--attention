@@ -29,7 +29,7 @@ Paying Attention is a personal Linux desktop app for attention management. Its M
 ## MVP Boundaries
 
 - The MVP includes Check-in, Focus Cycle, Review, Nagging Mode, Drift Recovery, Meeting Mode, settings, Attention History, CLI status/debug, and local install/autostart.
-- The MVP stores config in TOML and product history/state in SQLite.
+- The MVP stores configuration, product history, restorable state, and technical logs in one local SQLite database.
 - The MVP follows XDG locations for config, data, and state.
 - The MVP uses plaintext local data and plaintext Telegram credentials.
 - The MVP blocks only the primary display.
@@ -57,6 +57,7 @@ Paying Attention is a personal Linux desktop app for attention management. Its M
 - `develop` is the human-reviewed integration branch. Reach it only through a reviewed pull request from `develop-with-ai`.
 - `develop-with-ai` is the integration branch for autonomous work. Reach it through reviewed pull requests from short-lived Gitflow-named branches.
 - Start autonomous work from the current `develop-with-ai` using `feature/`, `fix/`, `refactor/`, `chore/`, `docs/`, or `test/` prefixes.
+- Execute every unblocked task continuously through implementation, verification, technical review, pull request, and integration into `develop-with-ai`, then start the next unblocked task. Do not pause for progress reports, pending human review in `develop`, routine confirmation, or feedback. Request human intervention only for a high- or critical-severity blocker that cannot be resolved autonomously. When intervention is required, respond under the heading `INTERVENÇÃO HUMANA` with the exact action the user must take and why it unblocks the work.
 - Before opening a pull request, rebase the short-lived branch onto `develop-with-ai`, run the relevant formatter and tests, and resolve conflicts locally.
 - Delete short-lived local and remote branches after their pull request is merged.
 - Do not push directly to `main` or `develop`. Do not bypass review or branch protection.

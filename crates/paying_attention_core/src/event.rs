@@ -1,4 +1,4 @@
-use crate::DeclaredTask;
+use crate::{DeclaredTask, DriftRecoverySubmission, ReviewSubmission};
 
 /// External input translated into domain events by adapters.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -14,13 +14,18 @@ pub enum Event {
     /// The user submitted the Check-in form.
     CheckInSubmitted { declared_task: DeclaredTask },
     /// The user submitted the Review form.
-    ReviewSubmitted,
+    ReviewSubmitted { submission: ReviewSubmission },
+    /// The user submitted Review answers and chose to continue the Declared Task.
+    ContinueDeclaredTask { submission: ReviewSubmission },
     /// The user submitted the Drift Recovery form.
-    DriftRecoverySubmitted,
+    DriftRecoverySubmitted { submission: DriftRecoverySubmission },
     /// The user started Meeting Mode.
-    MeetingModeStarted,
+    MeetingModeStarted {
+        reason: String,
+        duration_minutes: u16,
+    },
     /// The bounded Meeting Mode duration has elapsed.
     MeetingModeElapsed,
     /// The user submitted the Meeting End form.
-    MeetingEndSubmitted,
+    MeetingEndSubmitted { declared_task: DeclaredTask },
 }
