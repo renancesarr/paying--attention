@@ -1,4 +1,4 @@
-use crate::DeclaredTask;
+use crate::{DeclaredTask, ReviewSubmission};
 
 /// External input translated into domain events by adapters.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -13,8 +13,8 @@ pub enum Event {
     InputDetected,
     /// The user submitted the Check-in form.
     CheckInSubmitted { declared_task: DeclaredTask },
-    /// The user submitted the Review form with a new Declared Task.
-    ReviewSubmitted { declared_task: DeclaredTask },
+    /// The user submitted the Review form.
+    ReviewSubmitted { submission: ReviewSubmission },
     /// The user chose to continue the Declared Task shown during Review.
     ContinueDeclaredTask,
     /// The user submitted the Drift Recovery form.

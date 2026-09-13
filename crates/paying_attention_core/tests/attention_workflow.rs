@@ -1,6 +1,6 @@
 use paying_attention_core::{
-    AttentionWorkflow, ContinuationStatus, DeclaredTask, EmptyDeclaredTask, Event,
-    InvalidTransition, NaggingOrigin, WorkflowView,
+    AttentionWorkflow, CompletionStatus, ContinuationStatus, DeclaredTask, EmptyDeclaredTask,
+    Event, InvalidTransition, NaggingOrigin, ReviewSubmission, TaskRelevance, WorkflowView,
 };
 
 #[test]
@@ -77,7 +77,12 @@ fn review_with_a_new_declared_task_starts_the_next_focus_cycle() {
 
     let view = workflow
         .dispatch(Event::ReviewSubmitted {
-            declared_task: next_task.clone(),
+            submission: ReviewSubmission {
+                relevance: TaskRelevance::Relevant,
+                completion: CompletionStatus::Completed,
+                completion_justification: None,
+                declared_task: next_task.clone(),
+            },
         })
         .expect("a Review with a new task is valid");
 
@@ -87,6 +92,117 @@ fn review_with_a_new_declared_task_starts_the_next_focus_cycle() {
             declared_task: next_task
         }
     );
+}
+
+#[test]
+fn review_rejects_an_unfinished_task_without_completion_justification() {
+    let mut workflow =
+        workflow_in_focus(DeclaredTask::new("Implement the core FSM").expect("a valid task"));
+    workflow
+        .dispatch(Event::FocusElapsed)
+        .expect("an elapsed Focus Cycle is valid");
+    let next_task = DeclaredTask::new("Write the Review rules").expect("a valid task");
+
+    assert_eq!(
+        workflow.dispatch(Event::ReviewSubmitted {
+            submission: ReviewSubmission {
+                relevance: TaskRelevance::Relevant,
+                completion: CompletionStatus::NotCompleted,
+                completion_justification: None,
+                declared_task: next_task,
+            },
+        }),
+        Err(InvalidTransition {
+            state: WorkflowView::Review {
+                declared_task: DeclaredTask::new("Implement the core FSM").expect("a valid task"),
+                continuation: ContinuationStatus { used: 0, limit: 2 },
+            },
+            event: Event::ReviewSubmitted {
+                submission: ReviewSubmission {
+                    relevance: TaskRelevance::Relevant,
+                    completion: CompletionStatus::NotCompleted,
+                    completion_justification: None,
+                    declared_task: DeclaredTask::new("Write the Review rules")
+                        .expect("a valid task"),
+                },
+            },
+        })
+    );
+}
+
+#[test]
+fn review_rejects_an_in_progress_task_without_completion_justification() {
+    let mut workflow =
+        workflow_in_focus(DeclaredTask::new("Implement the core FSM").expect("a valid task"));
+    workflow
+        .dispatch(Event::FocusElapsed)
+        .expect("an elapsed Focus Cycle is valid");
+
+    let result = workflow.dispatch(Event::ReviewSubmitted {
+        submission: ReviewSubmission {
+            relevance: TaskRelevance::Irrelevant,
+            completion: CompletionStatus::InProgress,
+            completion_justification: None,
+            declared_task: DeclaredTask::new("Write the Review rules").expect("a valid task"),
+        },
+    });
+
+    assert!(matches!(result, Err(InvalidTransition { .. })));
+    assert_eq!(
+        workflow.view(),
+        WorkflowView::Review {
+            declared_task: DeclaredTask::new("Implement the core FSM").expect("a valid task"),
+            continuation: ContinuationStatus { used: 0, limit: 2 },
+        }
+    );
+}
+
+#[test]
+fn review_accepts_an_unfinished_task_with_completion_justification() {
+    let mut workflow =
+        workflow_in_focus(DeclaredTask::new("Implement the core FSM").expect("a valid task"));
+    workflow
+        .dispatch(Event::FocusElapsed)
+        .expect("an elapsed Focus Cycle is valid");
+    let next_task = DeclaredTask::new("Write the Review rules").expect("a valid task");
+
+    let view = workflow
+        .dispatch(Event::ReviewSubmitted {
+            submission: ReviewSubmission {
+                relevance: TaskRelevance::Irrelevant,
+                completion: CompletionStatus::NotCompleted,
+                completion_justification: Some("I lost the thread while investigating.".into()),
+                declared_task: next_task.clone(),
+            },
+        })
+        .expect("an unfinished task with a justification is valid");
+
+    assert_eq!(
+        view,
+        WorkflowView::Focus {
+            declared_task: next_task
+        }
+    );
+}
+
+#[test]
+fn review_rejects_a_blank_completion_justification() {
+    let mut workflow =
+        workflow_in_focus(DeclaredTask::new("Implement the core FSM").expect("a valid task"));
+    workflow
+        .dispatch(Event::FocusElapsed)
+        .expect("an elapsed Focus Cycle is valid");
+
+    let result = workflow.dispatch(Event::ReviewSubmitted {
+        submission: ReviewSubmission {
+            relevance: TaskRelevance::Relevant,
+            completion: CompletionStatus::InProgress,
+            completion_justification: Some("   ".into()),
+            declared_task: DeclaredTask::new("Write the Review rules").expect("a valid task"),
+        },
+    });
+
+    assert!(matches!(result, Err(InvalidTransition { .. })));
 }
 
 #[test]
@@ -215,11 +331,15 @@ fn review_rejects_the_unchanged_task_after_the_continuation_limit() {
     };
 
     assert_eq!(
-        workflow.dispatch(Event::ReviewSubmitted { declared_task }),
+        workflow.dispatch(Event::ReviewSubmitted {
+            submission: completed_relevant_submission(declared_task),
+        }),
         Err(InvalidTransition {
             state: expected_review.clone(),
             event: Event::ReviewSubmitted {
-                declared_task: DeclaredTask::new("Implement the core FSM").expect("a valid task"),
+                submission: completed_relevant_submission(
+                    DeclaredTask::new("Implement the core FSM").expect("a valid task"),
+                ),
             },
         })
     );
@@ -253,7 +373,7 @@ fn review_resets_the_continuation_counter_for_a_new_declared_task() {
     let next_task = DeclaredTask::new("Write the Review rules").expect("a valid task");
     workflow
         .dispatch(Event::ReviewSubmitted {
-            declared_task: next_task.clone(),
+            submission: completed_relevant_submission(next_task.clone()),
         })
         .expect("a new Declared Task is valid after the limit");
 
@@ -511,6 +631,15 @@ fn workflow_in_focus(declared_task: DeclaredTask) -> AttentionWorkflow {
         .dispatch(Event::CheckInSubmitted { declared_task })
         .expect("a completed Check-in is valid");
     workflow
+}
+
+fn completed_relevant_submission(declared_task: DeclaredTask) -> ReviewSubmission {
+    ReviewSubmission {
+        relevance: TaskRelevance::Relevant,
+        completion: CompletionStatus::Completed,
+        completion_justification: None,
+        declared_task,
+    }
 }
 
 fn assert_invalid_transition(

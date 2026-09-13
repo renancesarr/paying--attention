@@ -1,5 +1,5 @@
 use super::{AttentionWorkflow, WorkflowState};
-use crate::{Event, InvalidTransition, WorkflowView, CONTINUATION_LIMIT};
+use crate::{CompletionStatus, Event, InvalidTransition, WorkflowView, CONTINUATION_LIMIT};
 
 impl AttentionWorkflow {
     /// Apply a domain event and return the resulting read-only workflow view.
@@ -31,11 +31,19 @@ impl AttentionWorkflow {
                     declared_task: previous_task,
                     ..
                 },
-                Event::ReviewSubmitted { declared_task },
-            ) if declared_task != previous_task => WorkflowState::Focus {
-                declared_task,
-                continuations_used: 0,
-            },
+                Event::ReviewSubmitted { submission },
+            ) if submission.declared_task != previous_task
+                && (submission.completion == CompletionStatus::Completed
+                    || submission
+                        .completion_justification
+                        .as_deref()
+                        .is_some_and(|text| !text.trim().is_empty())) =>
+            {
+                WorkflowState::Focus {
+                    declared_task: submission.declared_task,
+                    continuations_used: 0,
+                }
+            }
             (
                 WorkflowState::Review {
                     declared_task,
