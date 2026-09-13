@@ -18,14 +18,17 @@
 
 ## Manual Checklist
 
-- [ ] Confirm that every connected monitor receives its own fullscreen, undecorated window.
+- [x] Human-tested on 2026-09-13: both connected displays received fullscreen Attention Block windows.
 - [ ] Confirm initial focus and keyboard input.
 - [ ] Confirm the Review preview (`PAYING_ATTENTION_SCREEN=review`) supports both a new Declared Task and allowed Continuation.
 - [ ] Confirm the Drift Recovery preview (`PAYING_ATTENTION_SCREEN=drift-recovery`) requires note, category, and action.
-- [ ] Test Alt+Tab, Super+Tab, workspace switching, and another application.
+- [x] Human-tested on 2026-09-13: `Alt+Tab` and `Super+Tab` both remain available and can switch away from the Attention Block.
+- [ ] Test workspace switching and interaction with another application.
 - [ ] Confirm `Ctrl+Shift+F` exits safely.
 - [ ] Capture a screenshot or short video. `gnome-screenshot` is unavailable on this host.
 
 ## Current Decision
 
-The code path is buildable and stays active on the target Wayland session. The friction decision remains pending the manual GNOME interaction checklist; no claim is made yet that GTK is sufficient as a practical Attention Block.
+The code path is buildable and opens fullscreen windows on both connected displays in the target Wayland session. However, `Alt+Tab` and `Super+Tab` provide a direct route away from the Attention Block. GTK4/libadwaita is therefore insufficient as a hard kiosk lock on this GNOME/Wayland environment.
+
+The behavioral MVP can continue because the fullscreen windows still create visible friction. A stronger GNOME Shell integration remains future work if the user requires a non-bypassable block.
