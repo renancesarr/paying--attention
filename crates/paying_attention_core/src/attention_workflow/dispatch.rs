@@ -1,24 +1,44 @@
 use super::{AttentionWorkflow, WorkflowState};
 use crate::{
-    CompletionStatus, Event, InvalidTransition, ReviewRecord, WorkflowView, CONTINUATION_LIMIT,
+    CompletionStatus, DriftRecoveryAction, DriftRecoveryRecord, Event, InvalidTransition,
+    ReviewRecord, WorkflowView, CONTINUATION_LIMIT,
 };
 
 impl AttentionWorkflow {
     /// Apply a domain event and return the resulting read-only workflow view.
+    #[allow(clippy::result_large_err)]
     pub fn dispatch(&mut self, event: Event) -> Result<WorkflowView, InvalidTransition> {
         let next_state = match (self.state.clone(), event) {
-            (WorkflowState::Boot, Event::BootDelayElapsed) => WorkflowState::CheckIn,
-            (WorkflowState::CheckIn, Event::IdleThresholdElapsed) => {
-                WorkflowState::NaggingDuringCheckIn
-            }
-            (WorkflowState::NaggingDuringCheckIn, Event::InputDetected) => WorkflowState::CheckIn,
-            (WorkflowState::CheckIn, Event::CheckInSubmitted { declared_task }) => {
-                WorkflowState::Focus {
-                    declared_task,
-                    continuations_used: 0,
-                    last_review: None,
-                }
-            }
+            (WorkflowState::Boot, Event::BootDelayElapsed) => WorkflowState::CheckIn {
+                last_drift_recovery: None,
+            },
+            (
+                WorkflowState::CheckIn {
+                    last_drift_recovery,
+                },
+                Event::IdleThresholdElapsed,
+            ) => WorkflowState::NaggingDuringCheckIn {
+                last_drift_recovery,
+            },
+            (
+                WorkflowState::NaggingDuringCheckIn {
+                    last_drift_recovery,
+                },
+                Event::InputDetected,
+            ) => WorkflowState::CheckIn {
+                last_drift_recovery,
+            },
+            (
+                WorkflowState::CheckIn {
+                    last_drift_recovery,
+                },
+                Event::CheckInSubmitted { declared_task },
+            ) => WorkflowState::Focus {
+                declared_task,
+                continuations_used: 0,
+                last_drift_recovery,
+                last_review: None,
+            },
             (
                 WorkflowState::Focus {
                     declared_task,
@@ -47,6 +67,7 @@ impl AttentionWorkflow {
                 WorkflowState::Focus {
                     declared_task: next_task,
                     continuations_used: 0,
+                    last_drift_recovery: None,
                     last_review: Some(ReviewRecord {
                         reviewed_task: previous_task,
                         submission,
@@ -70,6 +91,7 @@ impl AttentionWorkflow {
                 WorkflowState::Focus {
                     declared_task: declared_task.clone(),
                     continuations_used: continuations_used + 1,
+                    last_drift_recovery: None,
                     last_review: Some(ReviewRecord {
                         reviewed_task: declared_task,
                         submission,
@@ -108,6 +130,46 @@ impl AttentionWorkflow {
             (WorkflowState::NaggingDuringFocus { declared_task }, Event::InputDetected) => {
                 WorkflowState::DriftRecovery { declared_task }
             }
+            (
+                WorkflowState::DriftRecovery {
+                    declared_task: drifted_task,
+                },
+                Event::DriftRecoverySubmitted { submission },
+            ) if !submission.note.trim().is_empty() => match &submission.action {
+                DriftRecoveryAction::Retake => WorkflowState::Focus {
+                    declared_task: drifted_task.clone(),
+                    continuations_used: 0,
+                    last_drift_recovery: Some(DriftRecoveryRecord {
+                        drifted_task,
+                        submission,
+                    }),
+                    last_review: None,
+                },
+                DriftRecoveryAction::Restart => WorkflowState::Focus {
+                    declared_task: drifted_task.clone(),
+                    continuations_used: 0,
+                    last_drift_recovery: Some(DriftRecoveryRecord {
+                        drifted_task,
+                        submission,
+                    }),
+                    last_review: None,
+                },
+                DriftRecoveryAction::MarkIncomplete => WorkflowState::CheckIn {
+                    last_drift_recovery: Some(DriftRecoveryRecord {
+                        drifted_task,
+                        submission,
+                    }),
+                },
+                DriftRecoveryAction::NewTask(declared_task) => WorkflowState::Focus {
+                    declared_task: declared_task.clone(),
+                    continuations_used: 0,
+                    last_drift_recovery: Some(DriftRecoveryRecord {
+                        drifted_task,
+                        submission,
+                    }),
+                    last_review: None,
+                },
+            },
             (_, event) => {
                 return Err(InvalidTransition {
                     state: self.view(),

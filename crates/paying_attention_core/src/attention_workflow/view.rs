@@ -6,16 +6,22 @@ impl AttentionWorkflow {
     pub fn view(&self) -> WorkflowView {
         match &self.state {
             WorkflowState::Boot => WorkflowView::Boot,
-            WorkflowState::CheckIn => WorkflowView::CheckIn,
-            WorkflowState::NaggingDuringCheckIn => WorkflowView::Nagging {
+            WorkflowState::CheckIn {
+                last_drift_recovery,
+            } => WorkflowView::CheckIn {
+                last_drift_recovery: last_drift_recovery.clone(),
+            },
+            WorkflowState::NaggingDuringCheckIn { .. } => WorkflowView::Nagging {
                 origin: NaggingOrigin::CheckIn,
             },
             WorkflowState::Focus {
                 declared_task,
+                last_drift_recovery,
                 last_review,
                 ..
             } => WorkflowView::Focus {
                 declared_task: declared_task.clone(),
+                last_drift_recovery: last_drift_recovery.clone(),
                 last_review: last_review.clone(),
             },
             WorkflowState::Review {

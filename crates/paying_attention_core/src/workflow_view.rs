@@ -1,4 +1,4 @@
-use crate::{ContinuationStatus, DeclaredTask, ReviewRecord};
+use crate::{ContinuationStatus, DeclaredTask, DriftRecoveryRecord, ReviewRecord};
 
 /// The workflow phase that triggered Nagging Mode.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -12,9 +12,12 @@ pub enum NaggingOrigin {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum WorkflowView {
     Boot,
-    CheckIn,
+    CheckIn {
+        last_drift_recovery: Option<DriftRecoveryRecord>,
+    },
     Focus {
         declared_task: DeclaredTask,
+        last_drift_recovery: Option<DriftRecoveryRecord>,
         last_review: Option<ReviewRecord>,
     },
     Review {

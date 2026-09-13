@@ -1,13 +1,18 @@
-use crate::{DeclaredTask, ReviewRecord};
+use crate::{DeclaredTask, DriftRecoveryRecord, ReviewRecord};
 
 #[derive(Clone)]
 pub(super) enum WorkflowState {
     Boot,
-    CheckIn,
-    NaggingDuringCheckIn,
+    CheckIn {
+        last_drift_recovery: Option<DriftRecoveryRecord>,
+    },
+    NaggingDuringCheckIn {
+        last_drift_recovery: Option<DriftRecoveryRecord>,
+    },
     Focus {
         declared_task: DeclaredTask,
         continuations_used: u8,
+        last_drift_recovery: Option<DriftRecoveryRecord>,
         last_review: Option<ReviewRecord>,
     },
     Review {
