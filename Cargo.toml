@@ -1,5 +1,5 @@
 [workspace]
-members = ["crates/paying_attention_core"]
+members = ["crates/paying_attention_config", "crates/paying_attention_core"]
 resolver = "2"
 
 [workspace.package]
