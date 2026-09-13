@@ -1,3 +1,5 @@
+pub mod attention_history;
+pub mod attention_history_screen;
 pub mod check_in;
 pub mod drift_recovery;
 pub mod drift_recovery_screen;

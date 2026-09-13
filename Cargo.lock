@@ -782,6 +782,7 @@ dependencies = [
  "libadwaita",
  "paying_attention_config",
  "paying_attention_core",
+ "paying_attention_storage",
 ]
 
 [[package]]

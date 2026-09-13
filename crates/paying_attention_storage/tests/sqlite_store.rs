@@ -92,6 +92,8 @@ fn focus_cycles_keep_the_declared_task_and_review_outcome() {
     store
         .record_focus_cycle(FocusCycleRecord {
             declared_task: "Implement the storage schema".into(),
+            started_at: "2026-09-13T08:00:00-03:00".into(),
+            ended_at: "2026-09-14T08:00:00-03:00".into(),
             relevance: Some("relevant".into()),
             completion: Some("in_progress".into()),
             completion_justification: Some("The persistence slice needs another cycle.".into()),
@@ -102,6 +104,8 @@ fn focus_cycles_keep_the_declared_task_and_review_outcome() {
         store.focus_cycles().expect("loads Focus Cycles"),
         vec![FocusCycleRecord {
             declared_task: "Implement the storage schema".into(),
+            started_at: "2026-09-13T08:00:00-03:00".into(),
+            ended_at: "2026-09-14T08:00:00-03:00".into(),
             relevance: Some("relevant".into()),
             completion: Some("in_progress".into()),
             completion_justification: Some("The persistence slice needs another cycle.".into()),

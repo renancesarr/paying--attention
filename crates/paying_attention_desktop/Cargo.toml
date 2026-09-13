@@ -14,3 +14,4 @@ ksni = { version = "0.3", features = ["blocking"] }
 libadwaita = "0.8"
 paying_attention_core = { path = "../paying_attention_core" }
 paying_attention_config = { path = "../paying_attention_config" }
+paying_attention_storage = { path = "../paying_attention_storage" }
