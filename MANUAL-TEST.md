@@ -1,5 +1,8 @@
 # Manual de Build e Teste
 
+As validações pendentes dos tickets 10, 12, 15, 16 e 17 ficam no roteiro
+detalhado [docs/manual-validation-10-12-15-16-17.md](docs/manual-validation-10-12-15-16-17.md).
+
 ## Estado Atual
 
 O repositório possui o núcleo puro `paying_attention_core`, o binário técnico
