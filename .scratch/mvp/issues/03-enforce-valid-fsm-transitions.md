@@ -1,0 +1,13 @@
+# 03: Enforce Valid FSM Transitions
+
+**What to build:** Implement the pure FSM reducer so valid events move the app through the MVP workflow and invalid events return typed errors while preserving the current state.
+
+**Blocked by:** 02: Model FSM States And Events.
+
+**Status:** ready-for-agent
+
+- [ ] Valid BOOT to CHECK_IN behavior is represented by an elapsed boot delay event.
+- [ ] Valid Check-in, Focus, Review, Nagging, Drift Recovery, Meeting Mode, and Meeting End transitions are handled through the reducer.
+- [ ] Invalid transitions return a typed error and do not mutate the previous state.
+- [ ] The core does not read clocks, files, environment variables, databases, windows, or network.
+- [ ] Unit tests cover representative valid and invalid transitions for each state.
