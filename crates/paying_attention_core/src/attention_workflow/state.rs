@@ -1,4 +1,4 @@
-use crate::DeclaredTask;
+use crate::{DeclaredTask, ReviewRecord};
 
 #[derive(Clone)]
 pub(super) enum WorkflowState {
@@ -8,6 +8,7 @@ pub(super) enum WorkflowState {
     Focus {
         declared_task: DeclaredTask,
         continuations_used: u8,
+        last_review: Option<ReviewRecord>,
     },
     Review {
         declared_task: DeclaredTask,

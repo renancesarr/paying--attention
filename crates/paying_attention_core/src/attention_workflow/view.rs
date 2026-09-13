@@ -10,8 +10,13 @@ impl AttentionWorkflow {
             WorkflowState::NaggingDuringCheckIn => WorkflowView::Nagging {
                 origin: NaggingOrigin::CheckIn,
             },
-            WorkflowState::Focus { declared_task, .. } => WorkflowView::Focus {
+            WorkflowState::Focus {
+                declared_task,
+                last_review,
+                ..
+            } => WorkflowView::Focus {
                 declared_task: declared_task.clone(),
+                last_review: last_review.clone(),
             },
             WorkflowState::Review {
                 declared_task,

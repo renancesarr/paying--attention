@@ -4,11 +4,11 @@
 
 **Blocked by:** 04: Add Declared Task And Continuation Rules.
 
-**Status:** ready-for-agent
+**Status:** ready_for_review
 
-- [ ] Review records whether the previous Declared Task was relevant.
-- [ ] Review records completion as `Sim`, `Não`, or `Em andamento`.
-- [ ] `Não` requires a Completion Justification before the next Focus Cycle.
-- [ ] `Em andamento` requires a Completion Justification before the next Focus Cycle.
-- [ ] Relevance alone does not require justification in the MVP.
-- [ ] Unit tests cover all completion outcomes and required/optional fields.
+- [x] Review records whether the previous Declared Task was relevant.
+- [x] Review records completion as `Sim`, `Não`, or `Em andamento`.
+- [x] `Não` requires a Completion Justification before the next Focus Cycle.
+- [x] `Em andamento` requires a Completion Justification before the next Focus Cycle.
+- [x] Relevance alone does not require justification in the MVP.
+- [x] Unit tests cover all completion outcomes and required/optional fields.

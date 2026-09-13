@@ -1,5 +1,7 @@
 use super::{AttentionWorkflow, WorkflowState};
-use crate::{Event, InvalidTransition, WorkflowView, CONTINUATION_LIMIT};
+use crate::{
+    CompletionStatus, Event, InvalidTransition, ReviewRecord, WorkflowView, CONTINUATION_LIMIT,
+};
 
 impl AttentionWorkflow {
     /// Apply a domain event and return the resulting read-only workflow view.
@@ -14,12 +16,14 @@ impl AttentionWorkflow {
                 WorkflowState::Focus {
                     declared_task,
                     continuations_used: 0,
+                    last_review: None,
                 }
             }
             (
                 WorkflowState::Focus {
                     declared_task,
                     continuations_used,
+                    ..
                 },
                 Event::FocusElapsed,
             ) => WorkflowState::Review {
@@ -31,21 +35,47 @@ impl AttentionWorkflow {
                     declared_task: previous_task,
                     ..
                 },
-                Event::ReviewSubmitted { declared_task },
-            ) if declared_task != previous_task => WorkflowState::Focus {
-                declared_task,
-                continuations_used: 0,
-            },
+                Event::ReviewSubmitted { submission },
+            ) if submission.declared_task != previous_task
+                && (submission.completion == CompletionStatus::Completed
+                    || submission
+                        .completion_justification
+                        .as_deref()
+                        .is_some_and(|text| !text.trim().is_empty())) =>
+            {
+                let next_task = submission.declared_task.clone();
+                WorkflowState::Focus {
+                    declared_task: next_task,
+                    continuations_used: 0,
+                    last_review: Some(ReviewRecord {
+                        reviewed_task: previous_task,
+                        submission,
+                    }),
+                }
+            }
             (
                 WorkflowState::Review {
                     declared_task,
                     continuations_used,
                 },
-                Event::ContinueDeclaredTask,
-            ) if continuations_used < CONTINUATION_LIMIT => WorkflowState::Focus {
-                declared_task,
-                continuations_used: continuations_used + 1,
-            },
+                Event::ContinueDeclaredTask { submission },
+            ) if continuations_used < CONTINUATION_LIMIT
+                && submission.declared_task == declared_task
+                && (submission.completion == CompletionStatus::Completed
+                    || submission
+                        .completion_justification
+                        .as_deref()
+                        .is_some_and(|text| !text.trim().is_empty())) =>
+            {
+                WorkflowState::Focus {
+                    declared_task: declared_task.clone(),
+                    continuations_used: continuations_used + 1,
+                    last_review: Some(ReviewRecord {
+                        reviewed_task: declared_task,
+                        submission,
+                    }),
+                }
+            }
             (
                 WorkflowState::Review {
                     declared_task,
