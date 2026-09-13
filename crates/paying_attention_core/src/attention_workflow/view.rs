@@ -1,5 +1,5 @@
 use super::{AttentionWorkflow, WorkflowState};
-use crate::{NaggingOrigin, WorkflowView};
+use crate::{ContinuationStatus, NaggingOrigin, WorkflowView, CONTINUATION_LIMIT};
 
 impl AttentionWorkflow {
     /// Read the workflow without exposing its internal representation.
@@ -10,11 +10,18 @@ impl AttentionWorkflow {
             WorkflowState::NaggingDuringCheckIn => WorkflowView::Nagging {
                 origin: NaggingOrigin::CheckIn,
             },
-            WorkflowState::Focus { declared_task } => WorkflowView::Focus {
+            WorkflowState::Focus { declared_task, .. } => WorkflowView::Focus {
                 declared_task: declared_task.clone(),
             },
-            WorkflowState::Review { declared_task } => WorkflowView::Review {
+            WorkflowState::Review {
+                declared_task,
+                continuations_used,
+            } => WorkflowView::Review {
                 declared_task: declared_task.clone(),
+                continuation: ContinuationStatus {
+                    used: *continuations_used,
+                    limit: CONTINUATION_LIMIT,
+                },
             },
             WorkflowState::NaggingDuringReview { .. } => WorkflowView::Nagging {
                 origin: NaggingOrigin::Review,

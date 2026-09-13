@@ -5,6 +5,7 @@
 //! domain events and observe the Attention Workflow through its public seam.
 
 mod attention_workflow;
+mod continuation_status;
 mod declared_task;
 mod empty_declared_task;
 mod event;
@@ -12,6 +13,7 @@ mod invalid_transition;
 mod workflow_view;
 
 pub use attention_workflow::AttentionWorkflow;
+pub use continuation_status::{ContinuationStatus, CONTINUATION_LIMIT};
 pub use declared_task::DeclaredTask;
 pub use empty_declared_task::EmptyDeclaredTask;
 pub use event::Event;

@@ -13,8 +13,10 @@ pub enum Event {
     InputDetected,
     /// The user submitted the Check-in form.
     CheckInSubmitted { declared_task: DeclaredTask },
-    /// The user submitted the Review form.
-    ReviewSubmitted,
+    /// The user submitted the Review form with a new Declared Task.
+    ReviewSubmitted { declared_task: DeclaredTask },
+    /// The user chose to continue the Declared Task shown during Review.
+    ContinueDeclaredTask,
     /// The user submitted the Drift Recovery form.
     DriftRecoverySubmitted,
     /// The user started Meeting Mode.
