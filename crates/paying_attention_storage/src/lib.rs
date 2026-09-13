@@ -119,6 +119,12 @@ impl SqliteAttentionStore {
             .optional()
     }
 
+    pub fn clear_restorable_state(&mut self) -> rusqlite::Result<()> {
+        self.connection
+            .execute("DELETE FROM restorable_state", [])?;
+        Ok(())
+    }
+
     pub fn record_focus_cycle(&mut self, record: FocusCycleRecord) -> rusqlite::Result<()> {
         self.connection.execute(
             "INSERT INTO focus_cycles (declared_task, relevance, completion, completion_justification) VALUES (?1, ?2, ?3, ?4)",
