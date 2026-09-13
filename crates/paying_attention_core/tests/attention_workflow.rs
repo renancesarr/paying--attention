@@ -540,6 +540,129 @@ fn idle_focus_cycle_enters_nagging_then_opens_drift_recovery_on_input() {
 }
 
 #[test]
+fn meeting_mode_requires_a_reason_and_a_supported_duration() {
+    let declared_task = DeclaredTask::new("Implement the core FSM").expect("a valid task");
+    let mut workflow = workflow_in_focus(declared_task.clone());
+
+    let view = workflow
+        .dispatch(Event::MeetingModeStarted {
+            reason: "Weekly planning call".into(),
+            duration_minutes: 30,
+        })
+        .expect("a declared 30-minute meeting is valid");
+
+    assert_eq!(
+        view,
+        WorkflowView::MeetingMode {
+            declared_task,
+            reason: "Weekly planning call".into(),
+            duration_minutes: 30,
+        }
+    );
+}
+
+#[test]
+fn meeting_mode_accepts_each_configured_duration() {
+    for duration_minutes in [30, 60, 90] {
+        let declared_task = DeclaredTask::new("Implement the core FSM").expect("a valid task");
+        let mut workflow = workflow_in_focus(declared_task.clone());
+
+        let view = workflow
+            .dispatch(Event::MeetingModeStarted {
+                reason: "Weekly planning call".into(),
+                duration_minutes,
+            })
+            .expect("a configured Meeting Mode duration is valid");
+
+        assert_eq!(
+            view,
+            WorkflowView::MeetingMode {
+                declared_task,
+                reason: "Weekly planning call".into(),
+                duration_minutes,
+            }
+        );
+    }
+}
+
+#[test]
+fn meeting_mode_rejects_a_blank_reason_without_leaving_focus() {
+    let declared_task = DeclaredTask::new("Implement the core FSM").expect("a valid task");
+    let mut workflow = workflow_in_focus(declared_task.clone());
+
+    let error = workflow
+        .dispatch(Event::MeetingModeStarted {
+            reason: "  ".into(),
+            duration_minutes: 30,
+        })
+        .expect_err("a Meeting Mode reason is required");
+
+    assert_eq!(
+        error.state,
+        WorkflowView::Focus {
+            declared_task,
+            last_drift_recovery: None,
+            last_review: None,
+        }
+    );
+    assert_eq!(workflow.view(), error.state);
+}
+
+#[test]
+fn meeting_mode_rejects_an_unsupported_duration_without_leaving_focus() {
+    let declared_task = DeclaredTask::new("Implement the core FSM").expect("a valid task");
+    let mut workflow = workflow_in_focus(declared_task.clone());
+
+    let error = workflow
+        .dispatch(Event::MeetingModeStarted {
+            reason: "Weekly planning call".into(),
+            duration_minutes: 45,
+        })
+        .expect_err("only the configured Meeting Mode durations are valid");
+
+    assert_eq!(
+        error.state,
+        WorkflowView::Focus {
+            declared_task,
+            last_drift_recovery: None,
+            last_review: None,
+        }
+    );
+    assert_eq!(workflow.view(), error.state);
+}
+
+#[test]
+fn meeting_end_requires_a_next_declared_task_before_starting_focus() {
+    let mut workflow =
+        workflow_in_focus(DeclaredTask::new("Implement the core FSM").expect("a valid task"));
+    workflow
+        .dispatch(Event::MeetingModeStarted {
+            reason: "Weekly planning call".into(),
+            duration_minutes: 30,
+        })
+        .expect("a declared meeting is valid");
+    workflow
+        .dispatch(Event::MeetingModeElapsed)
+        .expect("an elapsed Meeting Mode opens Meeting End");
+    let next_task = DeclaredTask::new("Write the meeting follow-up").expect("a valid task");
+
+    let view = workflow
+        .dispatch(Event::MeetingEndSubmitted {
+            declared_task: next_task.clone(),
+        })
+        .expect("a Meeting End declaration starts the next Focus Cycle");
+
+    assert_eq!(
+        view,
+        WorkflowView::Focus {
+            declared_task: next_task,
+            last_drift_recovery: None,
+            last_review: None,
+        }
+    );
+}
+
+#[test]
 fn drift_recovery_with_a_new_task_starts_a_conscious_focus_cycle() {
     let drifted_task = DeclaredTask::new("Implement the core FSM").expect("a valid task");
     let mut workflow = workflow_in_focus(drifted_task.clone());
@@ -790,13 +913,18 @@ fn meeting_mode_elapsed_opens_meeting_end_from_a_focus_cycle() {
         .expect("a completed Check-in is valid");
 
     let meeting_view = workflow
-        .dispatch(Event::MeetingModeStarted)
+        .dispatch(Event::MeetingModeStarted {
+            reason: "Weekly planning call".into(),
+            duration_minutes: 30,
+        })
         .expect("Meeting Mode can start from a Focus Cycle");
 
     assert_eq!(
         meeting_view,
         WorkflowView::MeetingMode {
-            declared_task: declared_task.clone()
+            declared_task: declared_task.clone(),
+            reason: "Weekly planning call".into(),
+            duration_minutes: 30,
         }
     );
 
@@ -804,7 +932,14 @@ fn meeting_mode_elapsed_opens_meeting_end_from_a_focus_cycle() {
         .dispatch(Event::MeetingModeElapsed)
         .expect("an elapsed Meeting Mode opens Meeting End");
 
-    assert_eq!(meeting_end_view, WorkflowView::MeetingEnd { declared_task });
+    assert_eq!(
+        meeting_end_view,
+        WorkflowView::MeetingEnd {
+            declared_task,
+            reason: "Weekly planning call".into(),
+            duration_minutes: 30,
+        }
+    );
 }
 
 #[test]
@@ -876,13 +1011,18 @@ fn invalid_events_preserve_each_extended_attention_workflow_view() {
 
     let mut meeting_workflow = workflow_in_focus(declared_task.clone());
     meeting_workflow
-        .dispatch(Event::MeetingModeStarted)
+        .dispatch(Event::MeetingModeStarted {
+            reason: "Weekly planning call".into(),
+            duration_minutes: 30,
+        })
         .expect("Meeting Mode can start from a Focus Cycle");
     assert_invalid_transition(
         &mut meeting_workflow,
         Event::FocusElapsed,
         WorkflowView::MeetingMode {
             declared_task: declared_task.clone(),
+            reason: "Weekly planning call".into(),
+            duration_minutes: 30,
         },
     );
     meeting_workflow
@@ -891,7 +1031,11 @@ fn invalid_events_preserve_each_extended_attention_workflow_view() {
     assert_invalid_transition(
         &mut meeting_workflow,
         Event::FocusElapsed,
-        WorkflowView::MeetingEnd { declared_task },
+        WorkflowView::MeetingEnd {
+            declared_task,
+            reason: "Weekly planning call".into(),
+            duration_minutes: 30,
+        },
     );
 }
 

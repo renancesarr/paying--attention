@@ -43,11 +43,23 @@ impl AttentionWorkflow {
             WorkflowState::DriftRecovery { declared_task } => WorkflowView::DriftRecovery {
                 declared_task: declared_task.clone(),
             },
-            WorkflowState::MeetingMode { declared_task } => WorkflowView::MeetingMode {
+            WorkflowState::MeetingMode {
+                declared_task,
+                reason,
+                duration_minutes,
+            } => WorkflowView::MeetingMode {
                 declared_task: declared_task.clone(),
+                reason: reason.clone(),
+                duration_minutes: *duration_minutes,
             },
-            WorkflowState::MeetingEnd { declared_task } => WorkflowView::MeetingEnd {
+            WorkflowState::MeetingEnd {
+                declared_task,
+                reason,
+                duration_minutes,
+            } => WorkflowView::MeetingEnd {
                 declared_task: declared_task.clone(),
+                reason: reason.clone(),
+                duration_minutes: *duration_minutes,
             },
         }
     }

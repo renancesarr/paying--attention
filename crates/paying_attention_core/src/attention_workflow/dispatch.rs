@@ -121,11 +121,38 @@ impl AttentionWorkflow {
             (WorkflowState::Focus { declared_task, .. }, Event::IdleThresholdElapsed) => {
                 WorkflowState::NaggingDuringFocus { declared_task }
             }
-            (WorkflowState::Focus { declared_task, .. }, Event::MeetingModeStarted) => {
-                WorkflowState::MeetingMode { declared_task }
+            (
+                WorkflowState::Focus { declared_task, .. },
+                Event::MeetingModeStarted {
+                    reason,
+                    duration_minutes,
+                },
+            ) if !reason.trim().is_empty() && matches!(duration_minutes, 30 | 60 | 90) => {
+                WorkflowState::MeetingMode {
+                    declared_task,
+                    reason,
+                    duration_minutes,
+                }
             }
-            (WorkflowState::MeetingMode { declared_task }, Event::MeetingModeElapsed) => {
-                WorkflowState::MeetingEnd { declared_task }
+            (
+                WorkflowState::MeetingMode {
+                    declared_task,
+                    reason,
+                    duration_minutes,
+                },
+                Event::MeetingModeElapsed,
+            ) => WorkflowState::MeetingEnd {
+                declared_task,
+                reason,
+                duration_minutes,
+            },
+            (WorkflowState::MeetingEnd { .. }, Event::MeetingEndSubmitted { declared_task }) => {
+                WorkflowState::Focus {
+                    declared_task,
+                    continuations_used: 0,
+                    last_drift_recovery: None,
+                    last_review: None,
+                }
             }
             (WorkflowState::NaggingDuringFocus { declared_task }, Event::InputDetected) => {
                 WorkflowState::DriftRecovery { declared_task }
