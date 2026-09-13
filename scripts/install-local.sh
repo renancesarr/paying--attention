@@ -58,7 +58,7 @@ else
 [Desktop Entry]
 Type=Application
 Name=Paying Attention
-Exec=${bin_dir}/paying-attention-desktop
+Exec=${bin_dir}/paying-attention-desktop --autostart
 X-GNOME-Autostart-enabled=true
 EOF
   fi
