@@ -51,6 +51,17 @@ Paying Attention is a personal Linux desktop app for attention management. Its M
 - A ticket is done when its acceptance criteria pass and any affected docs still point to the right source of truth.
 - Keep future ideas in `FUTURE.md` unless the user explicitly promotes them into the MVP.
 
+## Git Workflow
+
+- `main` is the release branch. Reach it only through a reviewed pull request from `develop`.
+- `develop` is the human-reviewed integration branch. Reach it only through a reviewed pull request from `develop-with-ai`.
+- `develop-with-ai` is the integration branch for autonomous work. Reach it through reviewed pull requests from short-lived Gitflow-named branches.
+- Start autonomous work from the current `develop-with-ai` using `feature/`, `fix/`, `refactor/`, `chore/`, `docs/`, or `test/` prefixes.
+- Before opening a pull request, rebase the short-lived branch onto `develop-with-ai`, run the relevant formatter and tests, and resolve conflicts locally.
+- Delete short-lived local and remote branches after their pull request is merged.
+- Do not push directly to `main` or `develop`. Do not bypass review or branch protection.
+- Use `.agents/skills/ai-gitflow/SKILL.md` for the complete autonomous-work workflow.
+
 ## Agent Skills
 
 ### Issue Tracker
