@@ -4,10 +4,10 @@
 
 **Blocked by:** 02: Model FSM States And Events.
 
-**Status:** ready-for-agent
+**Status:** in_progress
 
-- [ ] Valid BOOT to CHECK_IN behavior is represented by an elapsed boot delay event.
+- [x] Valid BOOT to CHECK_IN behavior is represented by an elapsed boot delay event.
 - [ ] Valid Check-in, Focus, Review, Nagging, Drift Recovery, Meeting Mode, and Meeting End transitions are handled through the reducer.
-- [ ] Invalid transitions return a typed error and do not mutate the previous state.
-- [ ] The core does not read clocks, files, environment variables, databases, windows, or network.
+- [x] Invalid transitions return a typed error and do not mutate the previous state.
+- [x] The core does not read clocks, files, environment variables, databases, windows, or network.
 - [ ] Unit tests cover representative valid and invalid transitions for each state.
