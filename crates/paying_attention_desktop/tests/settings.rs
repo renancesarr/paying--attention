@@ -42,22 +42,3 @@ fn settings_input_displays_the_current_configuration() {
     assert_eq!(input.telegram_bot_token, "");
     assert_eq!(input.meeting_default_duration_minutes, 60);
 }
-
-#[test]
-fn settings_store_round_trips_toml_at_an_injected_path() {
-    let path = std::env::temp_dir().join(format!(
-        "paying-attention-settings-{}.toml",
-        std::process::id()
-    ));
-    let config = AppConfig::default();
-
-    paying_attention_desktop::settings_store::SettingsStore::new(&path)
-        .save(&config)
-        .expect("saves TOML");
-    let restored = paying_attention_desktop::settings_store::SettingsStore::new(&path)
-        .load()
-        .expect("loads TOML");
-
-    assert_eq!(restored, config);
-    std::fs::remove_file(path).expect("removes isolated test file");
-}

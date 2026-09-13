@@ -9,4 +9,5 @@ repository.workspace = true
 path = "src/lib.rs"
 
 [dependencies]
+paying_attention_config = { path = "../paying_attention_config" }
 rusqlite = { version = "0.32", features = ["bundled"] }

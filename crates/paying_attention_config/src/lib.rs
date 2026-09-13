@@ -4,11 +4,9 @@
 
 use std::path::{Path, PathBuf};
 
-use serde::{Deserialize, Serialize};
-
 pub const BUNDLED_NAGGING_SOUND_PATH: &str = "sounds/nagging.mp3";
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct AppConfig {
     pub timers: TimerConfig,
     pub nagging: NaggingConfig,
@@ -16,17 +14,7 @@ pub struct AppConfig {
     pub meeting: MeetingConfig,
 }
 
-impl AppConfig {
-    pub fn from_toml(source: &str) -> Result<Self, toml::de::Error> {
-        toml::from_str(source)
-    }
-
-    pub fn to_toml(&self) -> Result<String, toml::ser::Error> {
-        toml::to_string_pretty(self)
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TimerConfig {
     pub boot_delay_minutes: u16,
     pub focus_cycle_minutes: u16,
@@ -45,7 +33,7 @@ impl Default for TimerConfig {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct NaggingConfig {
     pub visual_style: NaggingVisualStyle,
     pub custom_sound_path: Option<PathBuf>,
@@ -68,19 +56,18 @@ impl Default for NaggingConfig {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum NaggingVisualStyle {
     DarkWhitePulse,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TelegramConfig {
     pub bot_token: String,
     pub chat_id: String,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MeetingConfig {
     pub default_duration_minutes: u16,
     pub allowed_durations_minutes: Vec<u16>,
@@ -97,24 +84,16 @@ impl Default for MeetingConfig {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct XdgPaths {
-    pub config_file: PathBuf,
-    pub data_dir: PathBuf,
-    pub state_dir: PathBuf,
+    pub database_file: PathBuf,
 }
 
 impl XdgPaths {
-    pub fn from_bases(
-        config_base: impl AsRef<Path>,
-        data_base: impl AsRef<Path>,
-        state_base: impl AsRef<Path>,
-    ) -> Self {
+    pub fn from_data_base(data_base: impl AsRef<Path>) -> Self {
         Self {
-            config_file: config_base
+            database_file: data_base
                 .as_ref()
                 .join("paying-attention")
-                .join("config.toml"),
-            data_dir: data_base.as_ref().join("paying-attention"),
-            state_dir: state_base.as_ref().join("paying-attention"),
+                .join("paying-attention.sqlite"),
         }
     }
 }

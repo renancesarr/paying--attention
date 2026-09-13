@@ -1,15 +1,12 @@
-use std::path::PathBuf;
 use std::{cell::RefCell, rc::Rc};
 
 use libadwaita::{self as adw, gtk, prelude::*};
 use paying_attention_core::AttentionWorkflow;
-use paying_attention_storage::SqliteAttentionStore;
+use paying_attention_storage::{application_database_path, SqliteAttentionStore};
 
 use crate::{
     attention_history::HistoryView,
-    attention_history_screen, settings_screen,
-    settings_store::SettingsStore,
-    strings,
+    attention_history_screen, settings_screen, strings,
     tray_command::{MeetingModeInput, TrayCommand},
 };
 
@@ -27,11 +24,7 @@ pub fn show(
 }
 
 fn present_attention_history(application: &adw::Application) {
-    let path = data_path();
-    if let Some(parent) = path.parent() {
-        let _ = std::fs::create_dir_all(parent);
-    }
-    let history = SqliteAttentionStore::open(path)
+    let history = application_store()
         .map(|store| {
             HistoryView::from_records(
                 store.focus_cycles().unwrap_or_default(),
@@ -50,9 +43,9 @@ fn present_attention_history(application: &adw::Application) {
 }
 
 fn present_settings(application: &adw::Application) {
-    let path = settings_path();
-    let store = SettingsStore::new(&path);
-    let config = store.load().unwrap_or_default();
+    let config = application_store()
+        .and_then(|store| store.load_app_config().ok())
+        .unwrap_or_default();
     let window = adw::ApplicationWindow::builder()
         .application(application)
         .title(strings::OPEN_SETTINGS)
@@ -61,26 +54,18 @@ fn present_settings(application: &adw::Application) {
         .build();
     let window_for_save = window.clone();
     window.set_content(Some(&settings_screen::build(config, move |config| {
-        let _ = SettingsStore::new(&path).save(&config);
+        if let Some(mut store) = application_store() {
+            let _ = store.save_app_config(&config);
+        }
         window_for_save.close();
     })));
     window.present();
 }
 
-fn settings_path() -> PathBuf {
-    std::env::var_os("XDG_CONFIG_HOME")
-        .map(PathBuf::from)
-        .or_else(|| std::env::var_os("HOME").map(|home| PathBuf::from(home).join(".config")))
-        .unwrap_or_else(|| PathBuf::from(".config"))
-        .join("paying-attention/config.toml")
-}
-
-fn data_path() -> PathBuf {
-    std::env::var_os("XDG_DATA_HOME")
-        .map(PathBuf::from)
-        .or_else(|| std::env::var_os("HOME").map(|home| PathBuf::from(home).join(".local/share")))
-        .unwrap_or_else(|| PathBuf::from(".local/share"))
-        .join("paying-attention/history.sqlite")
+fn application_store() -> Option<SqliteAttentionStore> {
+    application_database_path()
+        .ok()
+        .and_then(|path| SqliteAttentionStore::open(path).ok())
 }
 
 fn present_meeting_form(application: &adw::Application, workflow: Rc<RefCell<AttentionWorkflow>>) {

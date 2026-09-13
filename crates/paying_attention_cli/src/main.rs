@@ -1,7 +1,7 @@
-use std::{env, fs, path::PathBuf, process};
+use std::{env, process};
 
 use paying_attention_cli::TechnicalRecoveryService;
-use paying_attention_storage::SqliteAttentionStore;
+use paying_attention_storage::{application_database_path, SqliteAttentionStore};
 
 fn main() {
     if let Err(message) = run(env::args().skip(1).collect()) {
@@ -11,7 +11,7 @@ fn main() {
 }
 
 fn run(arguments: Vec<String>) -> Result<(), String> {
-    let path = state_database_path()?;
+    let path = application_database_path().map_err(|error| error.to_string())?;
     let mut store = SqliteAttentionStore::open(path).map_err(|error| error.to_string())?;
     let mut service = TechnicalRecoveryService::new(&mut store);
 
@@ -27,14 +27,4 @@ fn run(arguments: Vec<String>) -> Result<(), String> {
         }
         _ => Err("Use `paying-attention status` or `paying-attention unlock --force`.".into()),
     }
-}
-
-fn state_database_path() -> Result<PathBuf, String> {
-    let state_base = env::var_os("XDG_STATE_HOME")
-        .map(PathBuf::from)
-        .or_else(|| env::var_os("HOME").map(|home| PathBuf::from(home).join(".local/state")))
-        .ok_or_else(|| "XDG_STATE_HOME or HOME must be set.".to_string())?;
-    let state_dir = state_base.join("paying-attention");
-    fs::create_dir_all(&state_dir).map_err(|error| error.to_string())?;
-    Ok(state_dir.join("state.sqlite"))
 }

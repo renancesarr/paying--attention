@@ -1,5 +1,11 @@
 //! SQLite adapter for local Paying Attention product data.
 
+use std::{env, fs, io, path::PathBuf};
+
+use paying_attention_config::{
+    AppConfig, MeetingConfig, NaggingConfig, NaggingVisualStyle, TelegramConfig, TimerConfig,
+    XdgPaths,
+};
 use rusqlite::{params, Connection, OptionalExtension};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -58,6 +64,18 @@ impl SqliteAttentionStore {
                 completion TEXT,
                 completion_justification TEXT
             );
+            CREATE TABLE IF NOT EXISTS app_config (
+                singleton INTEGER PRIMARY KEY CHECK (singleton = 1),
+                boot_delay_minutes INTEGER NOT NULL,
+                focus_cycle_minutes INTEGER NOT NULL,
+                attention_block_idle_minutes INTEGER NOT NULL,
+                focus_cycle_idle_minutes INTEGER NOT NULL,
+                custom_sound_path TEXT,
+                telegram_bot_token TEXT,
+                telegram_chat_id TEXT,
+                meeting_default_duration_minutes INTEGER NOT NULL,
+                allowed_meeting_durations_minutes TEXT NOT NULL
+            );
             ",
         )?;
         let _ = connection.execute("ALTER TABLE focus_cycles ADD COLUMN started_at TEXT", []);
@@ -72,6 +90,104 @@ impl SqliteAttentionStore {
             params![history_event_name(event)],
         )?;
         Ok(())
+    }
+
+    pub fn save_app_config(&mut self, config: &AppConfig) -> rusqlite::Result<()> {
+        self.connection.execute(
+            "
+            INSERT INTO app_config (
+                singleton,
+                boot_delay_minutes,
+                focus_cycle_minutes,
+                attention_block_idle_minutes,
+                focus_cycle_idle_minutes,
+                custom_sound_path,
+                telegram_bot_token,
+                telegram_chat_id,
+                meeting_default_duration_minutes,
+                allowed_meeting_durations_minutes
+            ) VALUES (1, ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)
+            ON CONFLICT(singleton) DO UPDATE SET
+                boot_delay_minutes = excluded.boot_delay_minutes,
+                focus_cycle_minutes = excluded.focus_cycle_minutes,
+                attention_block_idle_minutes = excluded.attention_block_idle_minutes,
+                focus_cycle_idle_minutes = excluded.focus_cycle_idle_minutes,
+                custom_sound_path = excluded.custom_sound_path,
+                telegram_bot_token = excluded.telegram_bot_token,
+                telegram_chat_id = excluded.telegram_chat_id,
+                meeting_default_duration_minutes = excluded.meeting_default_duration_minutes,
+                allowed_meeting_durations_minutes = excluded.allowed_meeting_durations_minutes
+            ",
+            params![
+                config.timers.boot_delay_minutes,
+                config.timers.focus_cycle_minutes,
+                config.timers.attention_block_idle_minutes,
+                config.timers.focus_cycle_idle_minutes,
+                config
+                    .nagging
+                    .custom_sound_path
+                    .as_ref()
+                    .map(|path| path.to_string_lossy().to_string()),
+                config.telegram.as_ref().map(|telegram| &telegram.bot_token),
+                config.telegram.as_ref().map(|telegram| &telegram.chat_id),
+                config.meeting.default_duration_minutes,
+                meeting_durations_to_string(&config.meeting.allowed_durations_minutes),
+            ],
+        )?;
+        Ok(())
+    }
+
+    pub fn load_app_config(&self) -> rusqlite::Result<AppConfig> {
+        self.connection
+            .query_row(
+                "
+                SELECT
+                    boot_delay_minutes,
+                    focus_cycle_minutes,
+                    attention_block_idle_minutes,
+                    focus_cycle_idle_minutes,
+                    custom_sound_path,
+                    telegram_bot_token,
+                    telegram_chat_id,
+                    meeting_default_duration_minutes,
+                    allowed_meeting_durations_minutes
+                FROM app_config
+                WHERE singleton = 1
+                ",
+                [],
+                |row| {
+                    let bot_token = row.get::<_, Option<String>>(5)?;
+                    let chat_id = row.get::<_, Option<String>>(6)?;
+                    let telegram = match (bot_token, chat_id) {
+                        (Some(bot_token), Some(chat_id)) => {
+                            Some(TelegramConfig { bot_token, chat_id })
+                        }
+                        _ => None,
+                    };
+
+                    Ok(AppConfig {
+                        timers: TimerConfig {
+                            boot_delay_minutes: row.get(0)?,
+                            focus_cycle_minutes: row.get(1)?,
+                            attention_block_idle_minutes: row.get(2)?,
+                            focus_cycle_idle_minutes: row.get(3)?,
+                        },
+                        nagging: NaggingConfig {
+                            visual_style: NaggingVisualStyle::DarkWhitePulse,
+                            custom_sound_path: row.get::<_, Option<String>>(4)?.map(PathBuf::from),
+                        },
+                        telegram,
+                        meeting: MeetingConfig {
+                            default_duration_minutes: row.get(7)?,
+                            allowed_durations_minutes: meeting_durations_from_string(
+                                &row.get::<_, String>(8)?,
+                            )?,
+                        },
+                    })
+                },
+            )
+            .optional()
+            .map(|config| config.unwrap_or_default())
     }
 
     pub fn record_technical_log(&mut self, message: &str) -> rusqlite::Result<()> {
@@ -157,6 +273,35 @@ impl SqliteAttentionStore {
             .collect::<rusqlite::Result<Vec<_>>>()?;
         Ok(records)
     }
+}
+
+pub fn application_database_path() -> io::Result<PathBuf> {
+    let data_base = env::var_os("XDG_DATA_HOME")
+        .map(PathBuf::from)
+        .or_else(|| env::var_os("HOME").map(|home| PathBuf::from(home).join(".local/share")))
+        .ok_or_else(|| io::Error::other("XDG_DATA_HOME or HOME must be set."))?;
+    let database_file = XdgPaths::from_data_base(data_base).database_file;
+    let parent = database_file
+        .parent()
+        .ok_or_else(|| io::Error::other("application database path has no parent"))?;
+    fs::create_dir_all(parent)?;
+    Ok(database_file)
+}
+
+fn meeting_durations_to_string(durations: &[u16]) -> String {
+    durations
+        .iter()
+        .map(u16::to_string)
+        .collect::<Vec<_>>()
+        .join(",")
+}
+
+fn meeting_durations_from_string(value: &str) -> rusqlite::Result<Vec<u16>> {
+    value
+        .split(',')
+        .map(str::parse::<u16>)
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|_| rusqlite::Error::InvalidQuery)
 }
 
 fn history_event_name(event: AttentionHistoryEvent) -> &'static str {
