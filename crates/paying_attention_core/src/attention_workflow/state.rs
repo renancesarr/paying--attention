@@ -31,8 +31,12 @@ pub(super) enum WorkflowState {
     },
     MeetingMode {
         declared_task: DeclaredTask,
+        reason: String,
+        duration_minutes: u16,
     },
     MeetingEnd {
         declared_task: DeclaredTask,
+        reason: String,
+        duration_minutes: u16,
     },
 }

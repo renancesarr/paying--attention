@@ -20,9 +20,12 @@ pub enum Event {
     /// The user submitted the Drift Recovery form.
     DriftRecoverySubmitted { submission: DriftRecoverySubmission },
     /// The user started Meeting Mode.
-    MeetingModeStarted,
+    MeetingModeStarted {
+        reason: String,
+        duration_minutes: u16,
+    },
     /// The bounded Meeting Mode duration has elapsed.
     MeetingModeElapsed,
     /// The user submitted the Meeting End form.
-    MeetingEndSubmitted,
+    MeetingEndSubmitted { declared_task: DeclaredTask },
 }
