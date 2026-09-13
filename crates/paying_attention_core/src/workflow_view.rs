@@ -1,4 +1,4 @@
-use crate::{ContinuationStatus, DeclaredTask};
+use crate::{ContinuationStatus, DeclaredTask, ReviewRecord};
 
 /// The workflow phase that triggered Nagging Mode.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -15,6 +15,7 @@ pub enum WorkflowView {
     CheckIn,
     Focus {
         declared_task: DeclaredTask,
+        last_review: Option<ReviewRecord>,
     },
     Review {
         declared_task: DeclaredTask,

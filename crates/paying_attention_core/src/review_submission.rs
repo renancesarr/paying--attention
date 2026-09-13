@@ -20,3 +20,9 @@ pub struct ReviewSubmission {
     pub completion_justification: Option<String>,
     pub declared_task: DeclaredTask,
 }
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ReviewRecord {
+    pub reviewed_task: DeclaredTask,
+    pub submission: ReviewSubmission,
+}

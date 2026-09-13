@@ -19,5 +19,5 @@ pub use declared_task::DeclaredTask;
 pub use empty_declared_task::EmptyDeclaredTask;
 pub use event::Event;
 pub use invalid_transition::InvalidTransition;
-pub use review_submission::{CompletionStatus, ReviewSubmission, TaskRelevance};
+pub use review_submission::{CompletionStatus, ReviewRecord, ReviewSubmission, TaskRelevance};
 pub use workflow_view::{NaggingOrigin, WorkflowView};

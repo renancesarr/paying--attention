@@ -1,6 +1,7 @@
 use paying_attention_core::{
     AttentionWorkflow, CompletionStatus, ContinuationStatus, DeclaredTask, EmptyDeclaredTask,
-    Event, InvalidTransition, NaggingOrigin, ReviewSubmission, TaskRelevance, WorkflowView,
+    Event, InvalidTransition, NaggingOrigin, ReviewRecord, ReviewSubmission, TaskRelevance,
+    WorkflowView,
 };
 
 #[test]
@@ -29,7 +30,13 @@ fn check_in_starts_a_focus_cycle_with_the_declared_task() {
         })
         .expect("a completed Check-in is valid");
 
-    assert_eq!(view, WorkflowView::Focus { declared_task });
+    assert_eq!(
+        view,
+        WorkflowView::Focus {
+            declared_task,
+            last_review: None,
+        }
+    );
 }
 
 #[test]
@@ -67,7 +74,7 @@ fn review_with_a_new_declared_task_starts_the_next_focus_cycle() {
     let previous_task = DeclaredTask::new("Implement the core FSM").expect("a valid task");
     workflow
         .dispatch(Event::CheckInSubmitted {
-            declared_task: previous_task,
+            declared_task: previous_task.clone(),
         })
         .expect("a completed Check-in is valid");
     workflow
@@ -75,21 +82,26 @@ fn review_with_a_new_declared_task_starts_the_next_focus_cycle() {
         .expect("an elapsed Focus Cycle is valid");
     let next_task = DeclaredTask::new("Write continuation rules").expect("a valid task");
 
+    let submission = ReviewSubmission {
+        relevance: TaskRelevance::Relevant,
+        completion: CompletionStatus::Completed,
+        completion_justification: None,
+        declared_task: next_task.clone(),
+    };
     let view = workflow
         .dispatch(Event::ReviewSubmitted {
-            submission: ReviewSubmission {
-                relevance: TaskRelevance::Relevant,
-                completion: CompletionStatus::Completed,
-                completion_justification: None,
-                declared_task: next_task.clone(),
-            },
+            submission: submission.clone(),
         })
         .expect("a Review with a new task is valid");
 
     assert_eq!(
         view,
         WorkflowView::Focus {
-            declared_task: next_task
+            declared_task: next_task,
+            last_review: Some(ReviewRecord {
+                reviewed_task: previous_task,
+                submission,
+            }),
         }
     );
 }
@@ -180,7 +192,16 @@ fn review_accepts_an_unfinished_task_with_completion_justification() {
     assert_eq!(
         view,
         WorkflowView::Focus {
-            declared_task: next_task
+            declared_task: next_task.clone(),
+            last_review: Some(ReviewRecord {
+                reviewed_task: DeclaredTask::new("Implement the core FSM").expect("a valid task"),
+                submission: ReviewSubmission {
+                    relevance: TaskRelevance::Irrelevant,
+                    completion: CompletionStatus::NotCompleted,
+                    completion_justification: Some("I lost the thread while investigating.".into()),
+                    declared_task: next_task,
+                },
+            }),
         }
     );
 }
@@ -227,7 +248,16 @@ fn review_can_continue_the_original_declared_task() {
         })
         .expect("the first Continuation is valid");
 
-    assert_eq!(view, WorkflowView::Focus { declared_task });
+    assert_eq!(
+        view,
+        WorkflowView::Focus {
+            declared_task: declared_task.clone(),
+            last_review: Some(ReviewRecord {
+                reviewed_task: declared_task.clone(),
+                submission: completed_relevant_submission(declared_task),
+            }),
+        }
+    );
 }
 
 #[test]
@@ -570,6 +600,7 @@ fn invalid_events_preserve_each_extended_attention_workflow_view() {
         Event::BootDelayElapsed,
         WorkflowView::Focus {
             declared_task: declared_task.clone(),
+            last_review: None,
         },
     );
 
