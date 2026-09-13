@@ -1,3 +1,4 @@
+use paying_attention_config::{AppConfig, TelegramConfig};
 use paying_attention_storage::{AttentionHistoryEvent, FocusCycleRecord, SqliteAttentionStore};
 
 #[test]
@@ -110,5 +111,48 @@ fn focus_cycles_keep_the_declared_task_and_review_outcome() {
             completion: Some("in_progress".into()),
             completion_justification: Some("The persistence slice needs another cycle.".into()),
         }]
+    );
+}
+
+#[test]
+fn application_configuration_is_durable_in_the_same_database_as_attention_history() {
+    let mut store = SqliteAttentionStore::open_in_memory().expect("opens an isolated database");
+    let mut config = AppConfig::default();
+    config.timers.focus_cycle_minutes = 25;
+    config.nagging.custom_sound_path = Some("/tmp/attention.mp3".into());
+    config.telegram = Some(TelegramConfig {
+        bot_token: "bot-token".into(),
+        chat_id: "123456".into(),
+    });
+    config.meeting.allowed_durations_minutes = vec![30, 45, 90];
+
+    store
+        .save_app_config(&config)
+        .expect("saves application configuration");
+    store
+        .record_history(AttentionHistoryEvent::MeetingModeStarted)
+        .expect("records history in the same database");
+
+    assert_eq!(
+        store
+            .load_app_config()
+            .expect("loads application configuration"),
+        config
+    );
+    assert_eq!(
+        store.history().expect("loads history"),
+        vec![AttentionHistoryEvent::MeetingModeStarted]
+    );
+}
+
+#[test]
+fn application_configuration_defaults_until_the_user_saves_settings() {
+    let store = SqliteAttentionStore::open_in_memory().expect("opens an isolated database");
+
+    assert_eq!(
+        store
+            .load_app_config()
+            .expect("loads default configuration"),
+        AppConfig::default()
     );
 }

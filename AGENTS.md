@@ -29,7 +29,7 @@ Paying Attention is a personal Linux desktop app for attention management. Its M
 ## MVP Boundaries
 
 - The MVP includes Check-in, Focus Cycle, Review, Nagging Mode, Drift Recovery, Meeting Mode, settings, Attention History, CLI status/debug, and local install/autostart.
-- The MVP stores config in TOML and product history/state in SQLite.
+- The MVP stores configuration, product history, restorable state, and technical logs in one local SQLite database.
 - The MVP follows XDG locations for config, data, and state.
 - The MVP uses plaintext local data and plaintext Telegram credentials.
 - The MVP blocks only the primary display.

@@ -7,7 +7,6 @@ pub mod review;
 pub mod review_screen;
 pub mod settings;
 pub mod settings_screen;
-pub mod settings_store;
 pub mod startup;
 pub mod strings;
 pub mod tray;

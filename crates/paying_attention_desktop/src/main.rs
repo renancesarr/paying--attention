@@ -10,13 +10,13 @@ use paying_attention_core::{AttentionWorkflow, DeclaredTask, Event, WorkflowView
 use paying_attention_desktop::{
     check_in::{CheckInInput, Energy, Environment},
     drift_recovery_screen, review_screen,
-    settings_store::SettingsStore,
     startup::{mode, StartupMode},
     strings,
     tray::AttentionTray,
     tray_command::TrayCommand,
     tray_window,
 };
+use paying_attention_storage::{application_database_path, SqliteAttentionStore};
 
 const APPLICATION_ID: &str = "io.github.renancesarr.PayingAttention.Spike";
 
@@ -36,11 +36,7 @@ fn main() {
     let receiver = Rc::new(RefCell::new(Some(receiver)));
     let startup_mode = mode(
         &std::env::args().skip(1).collect::<Vec<_>>(),
-        SettingsStore::new(config_path())
-            .load()
-            .unwrap_or_default()
-            .timers
-            .boot_delay_minutes,
+        configured_boot_delay_minutes(),
     );
 
     application.connect_activate(move |application| {
@@ -61,14 +57,14 @@ fn main() {
     application.run();
 }
 
-fn config_path() -> std::path::PathBuf {
-    std::env::var_os("XDG_CONFIG_HOME")
-        .map(std::path::PathBuf::from)
-        .or_else(|| {
-            std::env::var_os("HOME").map(|home| std::path::PathBuf::from(home).join(".config"))
-        })
-        .unwrap_or_else(|| std::path::PathBuf::from(".config"))
-        .join("paying-attention/config.toml")
+fn configured_boot_delay_minutes() -> u16 {
+    application_database_path()
+        .ok()
+        .and_then(|path| SqliteAttentionStore::open(path).ok())
+        .and_then(|store| store.load_app_config().ok())
+        .unwrap_or_default()
+        .timers
+        .boot_delay_minutes
 }
 
 fn build_spike_window(application: &adw::Application, commands: Option<Receiver<TrayCommand>>) {

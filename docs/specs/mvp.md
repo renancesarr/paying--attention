@@ -12,7 +12,7 @@ Build a Rust desktop app for Ubuntu 26.04 GNOME/Wayland. The app runs in the bac
 
 After release, the app starts a Focus Cycle. When the cycle ends, it opens a Review where the user records whether the prior task was relevant, whether it was completed, and what the next Declared Task is. If the user leaves an Attention Block idle or stops interacting during a Focus Cycle, the app enters Nagging Mode using a visual dark/white transition, looping sound, and optional Telegram notification. Focus-cycle Nagging leads into Drift Recovery, where the user records what happened and chooses the next action.
 
-The app also provides Meeting Mode for calls, a settings surface backed by TOML, Attention History backed by SQLite, and a CLI for technical status/debug controls. The UI speaks PT-BR, while code and domain types use English vocabulary from `CONTEXT.md`.
+The app also provides Meeting Mode for calls, a SQLite-backed settings surface and Attention History, and a CLI for technical status/debug controls. The UI speaks PT-BR, while code and domain types use English vocabulary from `CONTEXT.md`.
 
 ## User Stories
 
@@ -50,7 +50,7 @@ The app also provides Meeting Mode for calls, a settings surface backed by TOML,
 32. As the user, I want Meeting Mode to end with a specific return screen, so that I consciously choose the next focus after a meeting.
 33. As the user, I want tray/menu access to Meeting Mode, settings, and Attention History, so that administration stays out of the Attention Block flow.
 34. As the user, I want a settings UI for common options, so that I can calibrate the tool without hand-editing files every time.
-35. As the user, I want advanced settings in TOML, so that the MVP remains flexible while the UI is still young.
+35. As the user, I want settings stored beside the Attention History in SQLite, so that one durable local database preserves the complete MVP record.
 36. As the user, I want config, data, and logs stored under XDG locations, so that the app behaves like a normal Linux desktop app.
 37. As the user, I want Attention History to show Focus Cycles and major events, so that I can inspect what happened without advanced analytics.
 38. As the user, I want the app to prevent multiple instances, so that two timers or blockers cannot compete.
@@ -95,9 +95,8 @@ The app also provides Meeting Mode for calls, a settings surface backed by TOML,
 - The Nagging sound is configurable by path, with a bundled fallback.
 - Telegram credentials are plaintext in the MVP, with keyring/encryption future work.
 - Telegram failure is recorded in history/logs and does not stop visual or sound Nagging.
-- Config uses TOML.
-- Attention History, cycles, events, justifications, Telegram errors, and restorable state use SQLite.
-- Config, data, and logs follow XDG directories.
+- Configuration, Attention History, cycles, events, justifications, Telegram errors, restorable state, and technical logs use one SQLite database.
+- The SQLite database follows the XDG data directory: `$XDG_DATA_HOME/paying-attention/paying-attention.sqlite`, or `~/.local/share/paying-attention/paying-attention.sqlite` when `XDG_DATA_HOME` is absent.
 - Local data is plaintext in the MVP.
 - Logs and Attention History are separate concepts: product events are history; technical diagnostics are logs.
 - No emergency unlock is exposed in the UI.
@@ -110,8 +109,7 @@ The app also provides Meeting Mode for calls, a settings surface backed by TOML,
 - FSM tests should assert external behavior: valid transitions, invalid transition errors, state preservation on invalid events, and required data before transition.
 - Timer behavior should be tested by injecting elapsed events, not waiting for real time.
 - Continuation limits, Review requirements, Nagging transitions, Drift Recovery, Meeting Mode, and restore semantics should be unit-tested in the core.
-- Config parsing/serialization should be tested without touching real user XDG directories.
-- Storage should use isolated test databases and verify durable state restoration.
+- Configuration and storage should use isolated SQLite databases in tests, without touching real user XDG directories.
 - GTK fullscreen behavior is a spike/manual verification target because GNOME Wayland behavior must be observed on the target environment.
 - The GTK fullscreen spike should document distro, GNOME version, session type, monitor setup, tested keyboard shortcuts, and whether `Ctrl+Shift+F` exits safely during development.
 - Telegram should be behind an adapter and tested with doubles before any real network integration.

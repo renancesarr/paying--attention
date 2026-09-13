@@ -21,63 +21,11 @@ fn default_config_represents_the_mvp_attention_cadence() {
 }
 
 #[test]
-fn representative_toml_round_trips_without_reading_user_directories() {
-    let source = r#"
-[timers]
-boot_delay_minutes = 5
-focus_cycle_minutes = 25
-attention_block_idle_minutes = 3
-focus_cycle_idle_minutes = 8
-
-[nagging]
-visual_style = "dark_white_pulse"
-custom_sound_path = "/home/dudu/Music/attention.mp3"
-
-[telegram]
-bot_token = "bot-token"
-chat_id = "123456"
-
-[meeting]
-default_duration_minutes = 30
-allowed_durations_minutes = [30, 60, 90]
-"#;
-
-    let config = AppConfig::from_toml(source).expect("representative TOML is valid");
-
-    assert_eq!(config.timers.focus_cycle_minutes, 25);
-    assert_eq!(
-        config.nagging.sound_path(),
-        std::path::Path::new("/home/dudu/Music/attention.mp3")
-    );
-    assert_eq!(
-        config
-            .telegram
-            .as_ref()
-            .expect("Telegram is configured")
-            .chat_id,
-        "123456"
-    );
-    assert_eq!(config.meeting.default_duration_minutes, 30);
-    assert_eq!(
-        AppConfig::from_toml(&config.to_toml().expect("serializes")),
-        Ok(config)
-    );
-}
-
-#[test]
-fn xdg_paths_are_derived_from_injected_bases_without_touching_the_filesystem() {
-    let paths = XdgPaths::from_bases("/tmp/config", "/tmp/data", "/tmp/state");
+fn xdg_database_path_is_derived_from_an_injected_data_base_without_touching_filesystem() {
+    let paths = XdgPaths::from_data_base("/tmp/data");
 
     assert_eq!(
-        paths.config_file,
-        std::path::Path::new("/tmp/config/paying-attention/config.toml")
-    );
-    assert_eq!(
-        paths.data_dir,
-        std::path::Path::new("/tmp/data/paying-attention")
-    );
-    assert_eq!(
-        paths.state_dir,
-        std::path::Path::new("/tmp/state/paying-attention")
+        paths.database_file,
+        std::path::Path::new("/tmp/data/paying-attention/paying-attention.sqlite")
     );
 }

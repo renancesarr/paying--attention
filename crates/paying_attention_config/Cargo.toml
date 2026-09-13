@@ -7,7 +7,3 @@ repository.workspace = true
 
 [lib]
 path = "src/lib.rs"
-
-[dependencies]
-serde = { version = "1", features = ["derive"] }
-toml = "0.8"

@@ -117,4 +117,4 @@ GTK é insuficiente para o produto final se não abrir em tela cheia, perder foc
 
 ## Recuperação
 
-O spike não deve configurar autostart, Telegram, áudio em loop, banco de dados ou qualquer bloqueio permanente. Durante desenvolvimento, use apenas `Ctrl+Shift+F` para sair da janela do spike. O futuro comando técnico `paying-attention unlock --force` pertence ao MVP, não ao spike inicial.
+O runtime de desenvolvimento não executa Nagging, Telegram ou áudio em loop. A tela de configurações e o histórico usam o banco local SQLite, mas o fluxo visual ainda deve ser encerrado com `Ctrl+Shift+F` durante o desenvolvimento. O comando técnico `paying-attention unlock --force` permanece disponível para recuperação de falha de software.
