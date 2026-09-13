@@ -25,7 +25,7 @@
 - [x] Human-tested on 2026-09-13: `Alt+Tab` and `Super+Tab` both remain available and can switch away from the Attention Block.
 - [x] Human-tested on 2026-09-13: `Super+Right` switched workspaces and other applications remained usable after bypassing the Attention Block.
 - [x] Human-tested on 2026-09-13: `Ctrl+Shift+F` closed every Attention Block window and returned to the terminal without freezing the session.
-- [ ] Capture a screenshot or short video. `gnome-screenshot` is unavailable on this host.
+- [x] Closure accepted on 2026-09-13 without a screenshot or video. `gnome-screenshot` is unavailable on this host; the SQLite-backed manual checklist and Markdown export remain the recorded evidence.
 
 The complete structured record is stored in the local manual-validation SQLite
 database and exported for review in
