@@ -553,6 +553,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "paying_attention_cli"
+version = "0.1.0"
+dependencies = [
+ "paying_attention_storage",
+ "rusqlite",
+]
+
+[[package]]
 name = "paying_attention_config"
 version = "0.1.0"
 dependencies = [
