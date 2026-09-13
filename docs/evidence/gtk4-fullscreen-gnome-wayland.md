@@ -19,13 +19,17 @@
 ## Manual Checklist
 
 - [x] Human-tested on 2026-09-13: both connected displays received fullscreen Attention Block windows.
-- [ ] Confirm initial focus and keyboard input.
+- [x] Human-tested on 2026-09-13: keyboard input reached the Declared Task field without clicking.
 - [ ] Confirm the Review preview (`PAYING_ATTENTION_SCREEN=review`) supports both a new Declared Task and allowed Continuation.
 - [ ] Confirm the Drift Recovery preview (`PAYING_ATTENTION_SCREEN=drift-recovery`) requires note, category, and action.
 - [x] Human-tested on 2026-09-13: `Alt+Tab` and `Super+Tab` both remain available and can switch away from the Attention Block.
-- [ ] Test workspace switching and interaction with another application.
-- [ ] Confirm `Ctrl+Shift+F` exits safely.
+- [x] Human-tested on 2026-09-13: `Super+Right` switched workspaces and other applications remained usable after bypassing the Attention Block.
+- [x] Human-tested on 2026-09-13: `Ctrl+Shift+F` closed every Attention Block window and returned to the terminal without freezing the session.
 - [ ] Capture a screenshot or short video. `gnome-screenshot` is unavailable on this host.
+
+The complete structured record is stored in the local manual-validation SQLite
+database and exported for review in
+[`manual-validation-ticket-10.md`](manual-validation-ticket-10.md).
 
 ## Current Decision
 

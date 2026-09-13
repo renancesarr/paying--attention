@@ -84,6 +84,25 @@ O SQLite é a fonte estruturada; o Markdown gerado é a evidência legível para
 revisão e Git. Não registre tarefas pessoais, justificativas sensíveis, tokens
 do Telegram ou capturas que contenham essas informações.
 
+### Captura Assistida
+
+Quando `gnome-screenshot` estiver instalado, o script abaixo captura a tela e
+registra a evidência no SQLite em uma única operação:
+
+```bash
+./scripts/capture-manual-evidence.sh \
+  --ticket 10 \
+  --check fullscreen-on-both-displays \
+  --outcome passed \
+  --command "cargo run -p paying_attention_desktop" \
+  --observation "Attention Block abriu em fullscreen nas duas telas."
+```
+
+O script salva o PNG em `/tmp/paying-attention-evidence` por padrão. Defina
+`PAYING_ATTENTION_EVIDENCE_DIR` para outro diretório. Se `gnome-screenshot`
+não estiver instalado, o script falha antes de gravar qualquer resultado;
+faça a captura pelo atalho do GNOME e use `validation record` com `--artifact`.
+
 ## Ticket 10: Fullscreen GTK4 no GNOME Wayland
 
 Execute:
