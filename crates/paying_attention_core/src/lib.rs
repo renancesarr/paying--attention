@@ -16,4 +16,4 @@ pub use declared_task::DeclaredTask;
 pub use empty_declared_task::EmptyDeclaredTask;
 pub use event::Event;
 pub use invalid_transition::InvalidTransition;
-pub use workflow_view::WorkflowView;
+pub use workflow_view::{NaggingOrigin, WorkflowView};
