@@ -2,15 +2,19 @@
 
 ## Estado Atual
 
-O repositório possui o crate puro `paying_attention_core`. Ele valida a lógica de domínio, mas ainda não há um executável desktop, janela GTK ou binário chamado `paying-attention`.
+O repositório possui o núcleo puro `paying_attention_core`, o binário técnico
+`paying-attention` e o spike GTK4 `paying-attention-desktop`. O aplicativo
+desktop ainda é um spike de interface: ele oferece Check-in, Review e
+Recuperação de Distração, mas ainda não contém os timers reais do produto.
 
 Por isso, neste momento:
 
-- `cargo build` compila a biblioteca.
-- `cargo test -p paying_attention_core` executa os testes do Attention Workflow.
-- `cargo run` ainda não é um teste válido: não existe um target binário para iniciar.
+- `cargo build --workspace` compila todos os crates.
+- `cargo test --workspace` executa as regras puras e os contratos dos formulários.
+- `cargo run -p paying_attention_desktop` abre o Check-in do spike.
 
-O próximo passo de produto é o spike da issue `#10`: criar um crate desktop temporário com GTK4/libadwaita e verificar seu comportamento no GNOME/Wayland.
+Use as prévias de Review e Recuperação de Distração para validar seus fluxos
+visuais antes de existir o runtime de timers.
 
 ## Validar o Núcleo Atual
 
@@ -59,14 +63,28 @@ sudo apt install build-essential pkg-config libgtk-4-dev libadwaita-1-dev
 
 ## Build e Execução do Spike
 
-Depois que a issue `#10` criar o crate planejado `paying_attention_desktop`, execute:
+Execute o Check-in:
 
 ```bash
 cargo build -p paying_attention_desktop
 cargo run -p paying_attention_desktop
 ```
 
-O resultado esperado é uma janela GTK4/libadwaita sem decorações e em tela cheia em cada monitor conectado. Ela é uma prova técnica, não o bloqueio final do produto.
+Execute a prévia de Review:
+
+```bash
+PAYING_ATTENTION_SCREEN=review cargo run -p paying_attention_desktop
+```
+
+Execute a prévia de Recuperação de Distração:
+
+```bash
+PAYING_ATTENTION_SCREEN=drift-recovery cargo run -p paying_attention_desktop
+```
+
+Cada comando deve abrir uma janela GTK4/libadwaita sem decorações e em tela
+cheia em cada monitor conectado. As prévias são ferramenta de desenvolvimento,
+não uma substituição para o runtime de Attention Workflow.
 
 ## Roteiro Manual do Spike
 
@@ -75,6 +93,8 @@ Com a janela em tela cheia, execute e registre cada item:
 - [ ] Cada monitor conectado recebe uma janela em tela cheia e sem barra de título.
 - [ ] A janela recebe foco ao abrir.
 - [ ] Texto ou outro controle da janela recebe input de teclado.
+- [ ] Review mostra a tarefa anterior, exige justificativa para `Não concluída` e `Em andamento`, e permite declarar nova tarefa ou continuar dentro do contador.
+- [ ] Recuperação de Distração exige relato, categoria e uma ação consciente antes de liberar o botão.
 - [ ] `Alt+Tab` foi testado e o efeito foi registrado.
 - [ ] `Super+Tab` foi testado e o efeito foi registrado.
 - [ ] Troca de workspace foi testada e o efeito foi registrado.
