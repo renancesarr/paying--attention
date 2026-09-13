@@ -36,6 +36,54 @@ mesmo material e descreva a diferença entre o esperado e o observado.
 O atalho de desenvolvimento `Ctrl+Shift+F` fecha o aplicativo. Use-o antes de
 abrir outra execução. Não habilite autostart durante esta validação.
 
+## Registro Estruturado de Evidência
+
+Além de capturas e do relatório de evidência, grave cada observação no banco
+SQLite de validação. Ele é separado do banco de dados pessoal do aplicativo e
+fica em `$XDG_STATE_HOME/paying-attention/manual-validation.sqlite`, ou em
+`~/.local/state/paying-attention/manual-validation.sqlite` quando
+`XDG_STATE_HOME` não estiver definido.
+
+Depois de observar um comportamento, registre-o com o CLI. Exemplo para o
+fullscreen testado no ticket 10:
+
+```bash
+cargo run -p paying_attention_cli -- validation record \
+  --ticket 10 \
+  --check fullscreen-on-both-displays \
+  --outcome passed \
+  --observed-at "$(date --iso-8601=seconds)" \
+  --command "cargo run -p paying_attention_desktop" \
+  --observation "Attention Block abriu em fullscreen nas duas telas." \
+  --artifact "/tmp/paying-attention-evidence/fullscreen.png"
+```
+
+Os resultados aceitos são `passed`, `failed` e `blocked`. Para registrar o
+resultado já observado de `Alt+Tab`, use `failed`, pois ele contorna o bloqueio
+pretendido:
+
+```bash
+cargo run -p paying_attention_cli -- validation record \
+  --ticket 10 \
+  --check alt-tab \
+  --outcome failed \
+  --observed-at "$(date --iso-8601=seconds)" \
+  --command "cargo run -p paying_attention_desktop" \
+  --observation "Alt+Tab alternou para outra aplicacao e contornou a Attention Block."
+```
+
+Gere um artefato Markdown versionável quando terminar uma sessão de testes:
+
+```bash
+mkdir -p docs/evidence
+cargo run -p paying_attention_cli -- validation report --ticket 10 \
+  > docs/evidence/manual-validation-ticket-10.md
+```
+
+O SQLite é a fonte estruturada; o Markdown gerado é a evidência legível para
+revisão e Git. Não registre tarefas pessoais, justificativas sensíveis, tokens
+do Telegram ou capturas que contenham essas informações.
+
 ## Ticket 10: Fullscreen GTK4 no GNOME Wayland
 
 Execute:

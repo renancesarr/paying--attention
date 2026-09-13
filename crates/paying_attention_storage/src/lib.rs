@@ -1,5 +1,12 @@
 //! SQLite adapter for local Paying Attention product data.
 
+mod manual_validation;
+
+pub use manual_validation::{
+    manual_validation_database_path, ManualValidationEvidence, ManualValidationOutcome,
+    ManualValidationStore,
+};
+
 use std::{env, fs, io, path::PathBuf};
 
 use paying_attention_config::{
