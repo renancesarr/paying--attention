@@ -1,0 +1,11 @@
+[workspace]
+members = ["crates/paying_attention_core"]
+resolver = "2"
+
+[workspace.package]
+edition = "2021"
+license = "MIT"
+repository = "git@github.com:renancesarr/paying--attention.git"
+
+[workspace.metadata.paying-attention]
+command = "paying-attention"
