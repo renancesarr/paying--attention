@@ -577,6 +577,7 @@ name = "paying_attention_desktop"
 version = "0.1.0"
 dependencies = [
  "libadwaita",
+ "paying_attention_core",
 ]
 
 [[package]]

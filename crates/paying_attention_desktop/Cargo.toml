@@ -11,3 +11,4 @@ path = "src/main.rs"
 
 [dependencies]
 libadwaita = "0.8"
+paying_attention_core = { path = "../paying_attention_core" }
