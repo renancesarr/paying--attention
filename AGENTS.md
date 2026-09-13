@@ -57,7 +57,7 @@ Paying Attention is a personal Linux desktop app for attention management. Its M
 - `develop` is the human-reviewed integration branch. Reach it only through a reviewed pull request from `develop-with-ai`.
 - `develop-with-ai` is the integration branch for autonomous work. Reach it through reviewed pull requests from short-lived Gitflow-named branches.
 - Start autonomous work from the current `develop-with-ai` using `feature/`, `fix/`, `refactor/`, `chore/`, `docs/`, or `test/` prefixes.
-- Continue autonomous development from `develop-with-ai` while pull requests await human review in `develop`; pause only when a required decision, credential, external action, or unresolved dependency needs human intervention.
+- Execute every unblocked task continuously through implementation, verification, technical review, pull request, and integration into `develop-with-ai`, then start the next unblocked task. Do not pause for progress reports, pending human review in `develop`, or routine confirmation. Request human intervention only for a high- or critical-severity blocker that cannot be resolved autonomously.
 - Before opening a pull request, rebase the short-lived branch onto `develop-with-ai`, run the relevant formatter and tests, and resolve conflicts locally.
 - Delete short-lived local and remote branches after their pull request is merged.
 - Do not push directly to `main` or `develop`. Do not bypass review or branch protection.
