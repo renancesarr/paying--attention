@@ -15,8 +15,8 @@ pub enum Event {
     CheckInSubmitted { declared_task: DeclaredTask },
     /// The user submitted the Review form.
     ReviewSubmitted { submission: ReviewSubmission },
-    /// The user chose to continue the Declared Task shown during Review.
-    ContinueDeclaredTask,
+    /// The user submitted Review answers and chose to continue the Declared Task.
+    ContinueDeclaredTask { submission: ReviewSubmission },
     /// The user submitted the Drift Recovery form.
     DriftRecoverySubmitted,
     /// The user started Meeting Mode.

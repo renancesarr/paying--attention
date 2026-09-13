@@ -49,11 +49,20 @@ impl AttentionWorkflow {
                     declared_task,
                     continuations_used,
                 },
-                Event::ContinueDeclaredTask,
-            ) if continuations_used < CONTINUATION_LIMIT => WorkflowState::Focus {
-                declared_task,
-                continuations_used: continuations_used + 1,
-            },
+                Event::ContinueDeclaredTask { submission },
+            ) if continuations_used < CONTINUATION_LIMIT
+                && submission.declared_task == declared_task
+                && (submission.completion == CompletionStatus::Completed
+                    || submission
+                        .completion_justification
+                        .as_deref()
+                        .is_some_and(|text| !text.trim().is_empty())) =>
+            {
+                WorkflowState::Focus {
+                    declared_task,
+                    continuations_used: continuations_used + 1,
+                }
+            }
             (
                 WorkflowState::Review {
                     declared_task,

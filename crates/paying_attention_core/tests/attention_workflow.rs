@@ -222,10 +222,32 @@ fn review_can_continue_the_original_declared_task() {
         .expect("an elapsed Focus Cycle is valid");
 
     let view = workflow
-        .dispatch(Event::ContinueDeclaredTask)
+        .dispatch(Event::ContinueDeclaredTask {
+            submission: completed_relevant_submission(declared_task.clone()),
+        })
         .expect("the first Continuation is valid");
 
     assert_eq!(view, WorkflowView::Focus { declared_task });
+}
+
+#[test]
+fn continuation_rejects_an_unfinished_review_without_completion_justification() {
+    let declared_task = DeclaredTask::new("Implement the core FSM").expect("a valid task");
+    let mut workflow = workflow_in_focus(declared_task.clone());
+    workflow
+        .dispatch(Event::FocusElapsed)
+        .expect("an elapsed Focus Cycle is valid");
+
+    let result = workflow.dispatch(Event::ContinueDeclaredTask {
+        submission: ReviewSubmission {
+            relevance: TaskRelevance::Relevant,
+            completion: CompletionStatus::NotCompleted,
+            completion_justification: None,
+            declared_task,
+        },
+    });
+
+    assert!(matches!(result, Err(InvalidTransition { .. })));
 }
 
 #[test]
@@ -244,7 +266,9 @@ fn review_shows_one_used_continuation_after_the_first_continued_focus_cycle() {
         .dispatch(Event::FocusElapsed)
         .expect("an elapsed Focus Cycle is valid");
     workflow
-        .dispatch(Event::ContinueDeclaredTask)
+        .dispatch(Event::ContinueDeclaredTask {
+            submission: completed_relevant_submission(declared_task.clone()),
+        })
         .expect("the first Continuation is valid");
 
     let view = workflow
@@ -278,7 +302,9 @@ fn review_rejects_a_third_continuation_and_preserves_the_limit_state() {
             .dispatch(Event::FocusElapsed)
             .expect("an elapsed Focus Cycle is valid");
         workflow
-            .dispatch(Event::ContinueDeclaredTask)
+            .dispatch(Event::ContinueDeclaredTask {
+                submission: completed_relevant_submission(declared_task.clone()),
+            })
             .expect("an available Continuation is valid");
     }
     workflow
@@ -286,15 +312,18 @@ fn review_rejects_a_third_continuation_and_preserves_the_limit_state() {
         .expect("an elapsed second continued Focus Cycle is valid");
 
     let expected_review = WorkflowView::Review {
-        declared_task,
+        declared_task: declared_task.clone(),
         continuation: ContinuationStatus { used: 2, limit: 2 },
+    };
+    let rejected_continuation = Event::ContinueDeclaredTask {
+        submission: completed_relevant_submission(declared_task),
     };
 
     assert_eq!(
-        workflow.dispatch(Event::ContinueDeclaredTask),
+        workflow.dispatch(rejected_continuation.clone()),
         Err(InvalidTransition {
             state: expected_review.clone(),
-            event: Event::ContinueDeclaredTask,
+            event: rejected_continuation,
         })
     );
     assert_eq!(workflow.view(), expected_review);
@@ -318,7 +347,9 @@ fn review_rejects_the_unchanged_task_after_the_continuation_limit() {
             .dispatch(Event::FocusElapsed)
             .expect("an elapsed Focus Cycle is valid");
         workflow
-            .dispatch(Event::ContinueDeclaredTask)
+            .dispatch(Event::ContinueDeclaredTask {
+                submission: completed_relevant_submission(declared_task.clone()),
+            })
             .expect("an available Continuation is valid");
     }
     workflow
@@ -355,7 +386,7 @@ fn review_resets_the_continuation_counter_for_a_new_declared_task() {
     let original_task = DeclaredTask::new("Implement the core FSM").expect("a valid task");
     workflow
         .dispatch(Event::CheckInSubmitted {
-            declared_task: original_task,
+            declared_task: original_task.clone(),
         })
         .expect("a completed Check-in is valid");
 
@@ -364,7 +395,9 @@ fn review_resets_the_continuation_counter_for_a_new_declared_task() {
             .dispatch(Event::FocusElapsed)
             .expect("an elapsed Focus Cycle is valid");
         workflow
-            .dispatch(Event::ContinueDeclaredTask)
+            .dispatch(Event::ContinueDeclaredTask {
+                submission: completed_relevant_submission(original_task.clone()),
+            })
             .expect("an available Continuation is valid");
     }
     workflow
