@@ -1,10 +1,18 @@
-use std::{cell::RefCell, rc::Rc};
+use std::{
+    cell::RefCell,
+    rc::Rc,
+    sync::mpsc::{self, Receiver},
+    time::Duration,
+};
 
 use libadwaita::{self as adw, gtk, prelude::*};
 use paying_attention_core::{AttentionWorkflow, DeclaredTask, Event, WorkflowView};
 use paying_attention_desktop::{
     check_in::{CheckInInput, Energy, Environment},
     drift_recovery_screen, review_screen, strings,
+    tray::AttentionTray,
+    tray_command::TrayCommand,
+    tray_window,
 };
 
 const APPLICATION_ID: &str = "io.github.renancesarr.PayingAttention.Spike";
@@ -19,15 +27,20 @@ enum PreviewScreen {
 fn main() {
     let application = adw::Application::builder()
         .application_id(APPLICATION_ID)
-        .flags(gtk::gio::ApplicationFlags::NON_UNIQUE)
         .build();
+    let (sender, receiver) = mpsc::channel();
+    let tray = AttentionTray::start(sender).ok();
+    let receiver = Rc::new(RefCell::new(Some(receiver)));
 
-    application.connect_activate(build_spike_window);
+    application.connect_activate(move |application| {
+        build_spike_window(application, receiver.borrow_mut().take());
+    });
     let _hold = application.hold();
+    let _tray = tray;
     application.run();
 }
 
-fn build_spike_window(application: &adw::Application) {
+fn build_spike_window(application: &adw::Application, commands: Option<Receiver<TrayCommand>>) {
     let screen = preview_screen();
     let workflow = Rc::new(RefCell::new(preview_workflow(screen)));
     let display = gtk::gdk::Display::default().expect("a graphical display is required");
@@ -40,6 +53,23 @@ fn build_spike_window(application: &adw::Application) {
             .expect("display monitor is available");
         build_monitor_window(application, &monitor, index + 1, workflow.clone());
     }
+    if let Some(commands) = commands {
+        install_tray_commands(application, workflow, commands);
+    }
+}
+
+fn install_tray_commands(
+    application: &adw::Application,
+    workflow: Rc<RefCell<AttentionWorkflow>>,
+    commands: Receiver<TrayCommand>,
+) {
+    let application = application.clone();
+    gtk::glib::timeout_add_local(Duration::from_millis(100), move || {
+        while let Ok(command) = commands.try_recv() {
+            tray_window::show(&application, workflow.clone(), command);
+        }
+        gtk::glib::ControlFlow::Continue
+    });
 }
 
 fn build_monitor_window(
