@@ -170,6 +170,46 @@ fn review_rejects_an_in_progress_task_without_completion_justification() {
 }
 
 #[test]
+fn review_accepts_an_in_progress_task_with_completion_justification() {
+    let mut workflow =
+        workflow_in_focus(DeclaredTask::new("Implement the core FSM").expect("a valid task"));
+    workflow
+        .dispatch(Event::FocusElapsed)
+        .expect("an elapsed Focus Cycle is valid");
+    let next_task = DeclaredTask::new("Write the Review rules").expect("a valid task");
+
+    let view = workflow
+        .dispatch(Event::ReviewSubmitted {
+            submission: ReviewSubmission {
+                relevance: TaskRelevance::Relevant,
+                completion: CompletionStatus::InProgress,
+                completion_justification: Some("The implementation needs another cycle.".into()),
+                declared_task: next_task.clone(),
+            },
+        })
+        .expect("an in-progress task with a justification is valid");
+
+    assert_eq!(
+        view,
+        WorkflowView::Focus {
+            declared_task: next_task,
+            last_review: Some(ReviewRecord {
+                reviewed_task: DeclaredTask::new("Implement the core FSM").expect("a valid task"),
+                submission: ReviewSubmission {
+                    relevance: TaskRelevance::Relevant,
+                    completion: CompletionStatus::InProgress,
+                    completion_justification: Some(
+                        "The implementation needs another cycle.".into()
+                    ),
+                    declared_task: DeclaredTask::new("Write the Review rules")
+                        .expect("a valid task"),
+                },
+            }),
+        }
+    );
+}
+
+#[test]
 fn review_accepts_an_unfinished_task_with_completion_justification() {
     let mut workflow =
         workflow_in_focus(DeclaredTask::new("Implement the core FSM").expect("a valid task"));
