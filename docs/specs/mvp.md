@@ -69,7 +69,7 @@ The app also provides Meeting Mode for calls, a settings surface backed by TOML,
 - The first execution milestone is technical viability: scaffold the Rust workspace, then run the GTK4 fullscreen spike before deeper FSM work.
 - The GTK4 spike must produce a Markdown result, screenshots or video, a completed manual checklist, and environment notes.
 - If GTK4 fullscreen is insufficient, stronger GNOME Shell integration is future work, not MVP scope.
-- The app blocks only the primary display in the MVP.
+- The app blocks every connected display in the MVP.
 - The UI is PT-BR in the MVP.
 - Code, crate names, state names, event names, and domain model names use English.
 - User-facing strings should be centralized so future i18n is not blocked.

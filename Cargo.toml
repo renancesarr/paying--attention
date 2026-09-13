@@ -2,6 +2,7 @@
 members = [
     "crates/paying_attention_config",
     "crates/paying_attention_core",
+    "crates/paying_attention_desktop",
     "crates/paying_attention_storage",
 ]
 resolver = "2"

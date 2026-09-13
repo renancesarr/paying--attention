@@ -66,13 +66,13 @@ cargo build -p paying_attention_desktop
 cargo run -p paying_attention_desktop
 ```
 
-O resultado esperado é uma janela GTK4/libadwaita sem decorações e em tela cheia no monitor principal. Ela é uma prova técnica, não o bloqueio final do produto.
+O resultado esperado é uma janela GTK4/libadwaita sem decorações e em tela cheia em cada monitor conectado. Ela é uma prova técnica, não o bloqueio final do produto.
 
 ## Roteiro Manual do Spike
 
 Com a janela em tela cheia, execute e registre cada item:
 
-- [ ] A janela abre em tela cheia e sem barra de título.
+- [ ] Cada monitor conectado recebe uma janela em tela cheia e sem barra de título.
 - [ ] A janela recebe foco ao abrir.
 - [ ] Texto ou outro controle da janela recebe input de teclado.
 - [ ] `Alt+Tab` foi testado e o efeito foi registrado.

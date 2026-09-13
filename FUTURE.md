@@ -6,10 +6,6 @@ Ideas intentionally kept outside the MVP.
 
 If a GTK4/libadwaita fullscreen window is not disruptive enough on GNOME Wayland, explore a GNOME Shell extension for stronger topmost, focus, and lock-like behavior.
 
-## Multi-Monitor Blocking
-
-The MVP blocks only the primary display. A future version should cover every connected display during an Attention Block or Nagging Mode.
-
 ## Browser Activity Capture
 
 Capture browser pages or tabs associated with a Focus Cycle so the user can later understand which links supported the Declared Task and which links caused Attention Drift.

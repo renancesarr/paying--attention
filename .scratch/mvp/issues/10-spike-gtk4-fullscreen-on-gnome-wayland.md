@@ -6,6 +6,7 @@
 
 **Status:** ready-for-agent
 
+- [ ] Every connected monitor receives a fullscreen, undecorated spike window.
 - [ ] A minimal GTK4/libadwaita window can open fullscreen without decorations.
 - [ ] The spike records whether the window receives focus reliably.
 - [ ] The spike records what happens when the user attempts alt-tab, super-tab, workspace switching, or interacting with other apps.
